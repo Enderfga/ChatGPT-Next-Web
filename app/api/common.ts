@@ -14,16 +14,25 @@ export async function requestOpenai(req: NextRequest) {
   var authValue,
     authHeaderName = "";
   if (isAzure) {
+    // 优先使用客户端提供的 key，否则使用服务端配置
     authValue =
       req.headers
         .get("Authorization")
         ?.trim()
         .replaceAll("Bearer ", "")
-        .trim() ?? "";
+        .trim() || serverConfig.azureApiKey || "";
 
     authHeaderName = "api-key";
   } else {
-    authValue = req.headers.get("Authorization") ?? "";
+    // 优先使用客户端提供的 key，否则使用服务端配置
+    const clientAuth = req.headers.get("Authorization") ?? "";
+    if (clientAuth && !clientAuth.startsWith("Bearer nk-")) {
+      // 客户端提供了真实的 API key
+      authValue = clientAuth;
+    } else {
+      // 使用服务端配置的 API key
+      authValue = serverConfig.apiKey ? `Bearer ${serverConfig.apiKey}` : "";
+    }
     authHeaderName = "Authorization";
   }
 
