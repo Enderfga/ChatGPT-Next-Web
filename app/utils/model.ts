@@ -15,12 +15,18 @@ const CustomSeq = {
   },
 };
 
-const customProvider = (providerName: string) => ({
-  id: providerName.toLowerCase(),
-  providerName: providerName,
-  providerType: "custom",
-  sorted: CustomSeq.next(providerName),
-});
+const customProvider = (providerName: string) => {
+  const id = providerName.toLowerCase();
+  // 如果是已知的 provider，使用对应的 providerType，否则使用 "custom"
+  const knownProviders = ["openai", "azure", "google", "anthropic"];
+  const providerType = knownProviders.includes(id) ? id : "custom";
+  return {
+    id,
+    providerName: providerName,
+    providerType,
+    sorted: CustomSeq.next(providerName),
+  };
+};
 
 /**
  * Sorts an array of models based on specified rules.
