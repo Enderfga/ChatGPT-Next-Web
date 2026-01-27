@@ -51,6 +51,7 @@ export async function requestOpenai(req: NextRequest) {
 
   console.log("[Proxy] ", path);
   console.log("[Base Url]", baseUrl);
+  console.log("[Auth Value]", authValue ? authValue.substring(0, 20) + "..." : "empty");
 
   const timeoutId = setTimeout(
     () => {
