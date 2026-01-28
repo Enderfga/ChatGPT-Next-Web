@@ -19,6 +19,7 @@ export interface UsePushOptions {
   onDisconnect?: () => void;
   autoReconnect?: boolean;
   reconnectDelay?: number;
+  pollingInterval?: number; // 轮询间隔（毫秒）
 }
 
 export interface UsePushReturn {
@@ -45,106 +46,121 @@ export function usePush(options: UsePushOptions): UsePushReturn {
     onError,
     onConnect,
     onDisconnect,
-    autoReconnect = true,
-    reconnectDelay = 3000,
+    pollingInterval = 3000, // 默认 3 秒轮询
   } = options;
 
   const [isConnected, setIsConnected] = useState(false);
   const [clientId, setClientId] = useState<string | null>(null);
-  const eventSourceRef = useRef<EventSource | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const shouldReconnectRef = useRef(true);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isPollingRef = useRef(false);
+  const shouldPollRef = useRef(true);
+
+  // 轮询函数
+  const poll = useCallback(async () => {
+    if (!sessionId || isPollingRef.current) return;
+
+    isPollingRef.current = true;
+    try {
+      const url = `/api/push?sessionId=${encodeURIComponent(sessionId)}`;
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      // 处理收到的消息
+      if (data.messages && Array.isArray(data.messages)) {
+        for (const message of data.messages) {
+          switch (message.type) {
+            case "message":
+              onMessage?.(message);
+              break;
+            case "status":
+              onStatus?.(message);
+              break;
+            case "error":
+              onError?.(message);
+              break;
+            default:
+              onMessage?.(message);
+          }
+        }
+      }
+
+      // 更新连接状态
+      if (!isConnected) {
+        setIsConnected(true);
+      }
+    } catch (e) {
+      console.error("[Push] Polling error:", e);
+      // 轮询失败时不立即标记为断开，等待下次轮询
+    } finally {
+      isPollingRef.current = false;
+    }
+  }, [sessionId, onMessage, onStatus, onError, isConnected]);
+
+  // 获取轮询间隔（页面不可见时降低频率）
+  const getPollingInterval = useCallback(() => {
+    if (typeof document !== "undefined" && document.hidden) {
+      return pollingInterval * 5; // 页面不可见时，轮询频率降为 1/5
+    }
+    return pollingInterval;
+  }, [pollingInterval]);
+
+  // 启动轮询
+  const startPolling = useCallback(() => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+    }
+
+    // 立即执行一次轮询
+    poll();
+
+    // 设置定时轮询
+    const scheduleNextPoll = () => {
+      if (!shouldPollRef.current) return;
+
+      pollingIntervalRef.current = setTimeout(() => {
+        poll().then(() => {
+          scheduleNextPoll();
+        });
+      }, getPollingInterval());
+    };
+
+    scheduleNextPoll();
+  }, [poll, getPollingInterval]);
+
+  // 停止轮询
+  const stopPolling = useCallback(() => {
+    if (pollingIntervalRef.current) {
+      clearTimeout(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+  }, []);
 
   const disconnect = useCallback(() => {
-    shouldReconnectRef.current = false;
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
-    }
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-      eventSourceRef.current = null;
-    }
+    shouldPollRef.current = false;
+    stopPolling();
     setIsConnected(false);
     setClientId(null);
     onDisconnect?.();
-  }, [onDisconnect]);
+  }, [onDisconnect, stopPolling]);
 
   const connect = useCallback(() => {
-    // 关闭现有连接
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-    }
+    shouldPollRef.current = true;
 
-    shouldReconnectRef.current = autoReconnect;
+    // 生成客户端 ID
+    const newClientId = `poll-${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2, 8)}`;
+    setClientId(newClientId);
+    onConnect?.(newClientId);
 
-    const url = `/api/push?sessionId=${encodeURIComponent(sessionId)}`;
-    const eventSource = new EventSource(url);
-    eventSourceRef.current = eventSource;
-
-    eventSource.addEventListener("connected", (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        setIsConnected(true);
-        setClientId(data.clientId);
-        onConnect?.(data.clientId);
-        console.log("[Push] Connected:", data);
-      } catch (e) {
-        console.error("[Push] Failed to parse connected event:", e);
-      }
-    });
-
-    eventSource.addEventListener("message", (event) => {
-      try {
-        const message: PushMessage = JSON.parse(event.data);
-        onMessage?.(message);
-      } catch (e) {
-        console.error("[Push] Failed to parse message:", e);
-      }
-    });
-
-    eventSource.addEventListener("status", (event) => {
-      try {
-        const message: PushMessage = JSON.parse(event.data);
-        onStatus?.(message);
-      } catch (e) {
-        console.error("[Push] Failed to parse status:", e);
-      }
-    });
-
-    eventSource.addEventListener("error", (event) => {
-      try {
-        // 尝试解析自定义错误事件
-        if (event instanceof MessageEvent && event.data) {
-          const message: PushMessage = JSON.parse(event.data);
-          onError?.(message);
-        }
-      } catch (e) {
-        // 连接错误
-      }
-    });
-
-    eventSource.onerror = () => {
-      console.log("[Push] Connection error, will reconnect...");
-      setIsConnected(false);
-      setClientId(null);
-
-      if (shouldReconnectRef.current) {
-        reconnectTimeoutRef.current = setTimeout(() => {
-          console.log("[Push] Attempting to reconnect...");
-          connect();
-        }, reconnectDelay);
-      }
-    };
-  }, [
-    sessionId,
-    autoReconnect,
-    reconnectDelay,
-    onConnect,
-    onMessage,
-    onStatus,
-    onError,
-  ]);
+    console.log("[Push] Starting polling for session:", sessionId);
+    startPolling();
+  }, [sessionId, onConnect, startPolling]);
 
   // 发送消息到其他 session
   const sendMessage = useCallback(
@@ -180,6 +196,28 @@ export function usePush(options: UsePushOptions): UsePushReturn {
     },
     [],
   );
+
+  // 监听页面可见性变化
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        console.log("[Push] Page hidden, reducing poll frequency");
+      } else {
+        console.log("[Push] Page visible, resuming normal poll frequency");
+        // 页面变为可见时立即轮询一次
+        if (shouldPollRef.current && sessionId) {
+          poll();
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [poll, sessionId]);
 
   // 自动连接
   useEffect(() => {
