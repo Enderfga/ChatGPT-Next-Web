@@ -252,6 +252,12 @@ export function getHeaders(ignoreHeaders: boolean = false) {
     };
   }
 
+  // Add webchat session ID for push capability
+  const sessionId = chatStore.currentSession()?.id;
+  if (sessionId) {
+    headers["x-webchat-session-id"] = sessionId;
+  }
+
   const clientConfig = getClientConfig();
 
   function getConfig() {

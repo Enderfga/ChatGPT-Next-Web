@@ -597,6 +597,24 @@ export const useChatStore = createPersistStore(
         const mcpEnabled = await isMcpEnabled();
         const mcpSystemPrompt = mcpEnabled ? await getMcpSystemPrompt() : "";
 
+        // Push capability prompt - allows AI to proactively send messages
+        const pushCapabilityPrompt = `
+
+[Push Capability]
+You can proactively push messages to this webchat session. Use this when you need to:
+- Send a "please wait" message before doing something that takes time
+- Split your response into multiple messages
+- Send follow-up messages after completing background tasks
+
+To push a message, use:
+curl -X POST https://gpt.enderfga.cn/api/push \\
+  -H "Content-Type: application/json" \\
+  -d '{"sessionId": "${session.id}", "content": "your message here", "role": "assistant"}'
+
+Current webchat session ID: ${session.id}
+You can use this capability multiple times in a single conversation.
+`;
+
         var systemPrompts: ChatMessage[] = [];
 
         if (shouldInjectSystemPrompts) {
@@ -607,24 +625,32 @@ export const useChatStore = createPersistStore(
                 fillTemplateWith("", {
                   ...modelConfig,
                   template: DEFAULT_SYSTEM_TEMPLATE,
-                }) + mcpSystemPrompt,
+                }) +
+                mcpSystemPrompt +
+                pushCapabilityPrompt,
             }),
           ];
         } else if (mcpEnabled) {
           systemPrompts = [
             createMessage({
               role: "system",
-              content: mcpSystemPrompt,
+              content: mcpSystemPrompt + pushCapabilityPrompt,
+            }),
+          ];
+        } else {
+          // Always inject push capability even if other system prompts are disabled
+          systemPrompts = [
+            createMessage({
+              role: "system",
+              content: pushCapabilityPrompt,
             }),
           ];
         }
 
-        if (shouldInjectSystemPrompts || mcpEnabled) {
-          console.log(
-            "[Global System Prompt] ",
-            systemPrompts.at(0)?.content ?? "empty",
-          );
-        }
+        console.log(
+          "[Global System Prompt] ",
+          systemPrompts.at(0)?.content?.slice(0, 200) + "..." ?? "empty",
+        );
         const memoryPrompt = get().getMemoryPrompt();
         // long term memory
         const shouldSendLongTermMemory =
