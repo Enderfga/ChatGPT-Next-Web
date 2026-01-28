@@ -20,7 +20,9 @@ export async function requestOpenai(req: NextRequest) {
         .get("Authorization")
         ?.trim()
         .replaceAll("Bearer ", "")
-        .trim() || serverConfig.azureApiKey || "";
+        .trim() ||
+      serverConfig.azureApiKey ||
+      "";
 
     authHeaderName = "api-key";
   } else {
@@ -51,7 +53,10 @@ export async function requestOpenai(req: NextRequest) {
 
   console.log("[Proxy] ", path);
   console.log("[Base Url]", baseUrl);
-  console.log("[Auth Value]", authValue ? authValue.substring(0, 20) + "..." : "empty");
+  console.log(
+    "[Auth Value]",
+    authValue ? authValue.substring(0, 20) + "..." : "empty",
+  );
 
   const timeoutId = setTimeout(
     () => {
@@ -107,6 +112,13 @@ export async function requestOpenai(req: NextRequest) {
       [authHeaderName]: authValue,
       ...(serverConfig.openaiOrgId && {
         "OpenAI-Organization": serverConfig.openaiOrgId,
+      }),
+      // Cloudflare Access headers for tunneled backends
+      ...(serverConfig.cfAccessClientId && {
+        "CF-Access-Client-Id": serverConfig.cfAccessClientId,
+      }),
+      ...(serverConfig.cfAccessClientSecret && {
+        "CF-Access-Client-Secret": serverConfig.cfAccessClientSecret,
       }),
     },
     method: req.method,

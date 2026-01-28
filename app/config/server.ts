@@ -96,6 +96,10 @@ declare global {
       DEFAULT_INPUT_TEMPLATE?: string;
 
       ENABLE_MCP?: string; // enable mcp functionality
+
+      // Cloudflare Access (for tunneled backends)
+      CF_ACCESS_CLIENT_ID?: string;
+      CF_ACCESS_CLIENT_SECRET?: string;
     }
   }
 }
@@ -274,5 +278,9 @@ export const getServerSideConfig = () => {
     visionModels,
     allowedWebDavEndpoints,
     enableMcp: process.env.ENABLE_MCP === "true",
+
+    // Cloudflare Access credentials
+    cfAccessClientId: process.env.CF_ACCESS_CLIENT_ID,
+    cfAccessClientSecret: process.env.CF_ACCESS_CLIENT_SECRET,
   };
 };
