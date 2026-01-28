@@ -1,5 +1,10 @@
 {
-    "github": {
-        "silent": true
+  "github": {
+    "silent": true
+  },
+  "functions": {
+    "app/api/**/*.ts": {
+      "maxDuration": 300
     }
+  }
 }
