@@ -94,12 +94,9 @@ export function McpMarketPage() {
       if (!mcpEnabled) return;
       try {
         setLoadingPresets(true);
-        const response = await fetch("https://nextchat.club/mcp/list");
-        if (!response.ok) {
-          throw new Error("Failed to load preset servers");
-        }
-        const data = await response.json();
-        setPresetServers(data?.data ?? []);
+        // Original nextchat.club API removed - self-hosted version
+        // TODO: Add your own MCP server list endpoint if needed
+        setPresetServers([]);
       } catch (error) {
         console.error("Failed to load preset servers:", error);
         showToast("Failed to load preset servers");
