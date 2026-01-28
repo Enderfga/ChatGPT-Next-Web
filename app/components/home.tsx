@@ -30,6 +30,7 @@ import { type ClientApi, getClientApi } from "../client/api";
 import { useAccessStore } from "../store";
 import clsx from "clsx";
 import { initializeMcpSystem, isMcpEnabled } from "../mcp/actions";
+import { PushProvider } from "./push-provider";
 
 export function Loading(props: { noLogo?: boolean }) {
   return (
@@ -265,7 +266,9 @@ export function Home() {
   return (
     <ErrorBoundary>
       <Router>
-        <Screen />
+        <PushProvider showNotifications={true}>
+          <Screen />
+        </PushProvider>
       </Router>
     </ErrorBoundary>
   );
