@@ -404,45 +404,6 @@ export const useChatStore = createPersistStore(
         get().summarizeSession(false, targetSession);
       },
 
-      // 处理推送消息（SSE 双向通信）
-      receivePushMessage(
-        sessionId: string,
-        content: string,
-        options?: {
-          role?: "assistant" | "system";
-          metadata?: Record<string, unknown>;
-        },
-      ) {
-        const sessions = get().sessions;
-        const targetSession = sessions.find((s) => s.id === sessionId);
-
-        if (!targetSession) {
-          console.warn(`[Push] Session ${sessionId} not found`);
-          return false;
-        }
-
-        const pushMessage: ChatMessage = createMessage({
-          role: options?.role || "assistant",
-          content,
-        });
-
-        get().updateTargetSession(targetSession, (session) => {
-          session.messages = session.messages.concat(pushMessage);
-          session.lastUpdate = Date.now();
-        });
-
-        get().updateStat(pushMessage, targetSession);
-        get().summarizeSession(false, targetSession);
-
-        return true;
-      },
-
-      // 获取当前会话 ID（用于建立推送连接）
-      getCurrentSessionId() {
-        const session = get().currentSession();
-        return session?.id || null;
-      },
-
       async onUserInput(
         content: string,
         attachImages?: string[],
