@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 
+// 多模态内容类型（与 client/api.ts 保持一致）
+interface MultimodalContent {
+  type: "text" | "image_url";
+  text?: string;
+  image_url?: { url: string };
+}
+
 // 存储待推送的消息队列
 interface PushMessage {
   id: string;
   sessionId: string;
   type: "message" | "status" | "error";
-  content: string;
+  content: string | MultimodalContent[]; // 支持文本或多模态内容
   role?: "assistant" | "system";
   timestamp: number;
   metadata?: Record<string, unknown>;

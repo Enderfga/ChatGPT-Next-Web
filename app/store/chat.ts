@@ -404,10 +404,10 @@ export const useChatStore = createPersistStore(
         get().summarizeSession(false, targetSession);
       },
 
-      // 处理推送消息（SSE 双向通信）
+      // 处理推送消息（SSE 双向通信）- 支持文本和多模态内容（图片）
       receivePushMessage(
         sessionId: string,
-        content: string,
+        content: string | MultimodalContent[],
         options?: {
           role?: "assistant" | "system";
           metadata?: Record<string, unknown>;
