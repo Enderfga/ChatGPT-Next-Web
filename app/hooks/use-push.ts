@@ -1,13 +1,47 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 
+// 多模态内容类型
+export interface MultimodalContent {
+  type: "text" | "image_url";
+  text?: string;
+  image_url?: { url: string };
+}
+
 export interface PushMessage {
   id: string;
   sessionId: string;
   type: "message" | "status" | "error";
-  content: string;
+  content: string | MultimodalContent[];
   role?: "assistant" | "system";
   timestamp: number;
   metadata?: Record<string, unknown>;
+}
+
+// 辅助函数：提取文本内容用于预览
+export function getTextPreview(
+  content: string | MultimodalContent[],
+  maxLength = 50,
+): string {
+  if (typeof content === "string") {
+    return content.length > maxLength
+      ? content.slice(0, maxLength) + "..."
+      : content;
+  }
+
+  // 多模态内容：提取文本部分
+  const textParts = content
+    .filter((item) => item.type === "text" && item.text)
+    .map((item) => item.text!)
+    .join(" ");
+
+  const hasImages = content.some((item) => item.type === "image_url");
+  const imageIndicator = hasImages ? "📷 " : "";
+
+  const preview = textParts || (hasImages ? "[图片]" : "[空内容]");
+  return (
+    imageIndicator +
+    (preview.length > maxLength ? preview.slice(0, maxLength) + "..." : preview)
+  );
 }
 
 export interface UsePushOptions {
@@ -29,7 +63,7 @@ export interface UsePushReturn {
   disconnect: () => void;
   sendMessage: (
     targetSessionId: string,
-    content: string,
+    content: string | MultimodalContent[],
     options?: {
       type?: "message" | "status" | "error";
       role?: "assistant" | "system";
@@ -162,11 +196,11 @@ export function usePush(options: UsePushOptions): UsePushReturn {
     startPolling();
   }, [sessionId, onConnect, startPolling]);
 
-  // 发送消息到其他 session
+  // 发送消息到其他 session（支持文本和多模态内容）
   const sendMessage = useCallback(
     async (
       targetSessionId: string,
-      content: string,
+      content: string | MultimodalContent[],
       options?: {
         type?: "message" | "status" | "error";
         role?: "assistant" | "system";
@@ -239,10 +273,10 @@ export function usePush(options: UsePushOptions): UsePushReturn {
   };
 }
 
-// 简单的全局推送 API（用于非 React 环境）
+// 简单的全局推送 API（用于非 React 环境）- 支持文本和多模态内容
 export async function pushMessage(
   sessionId: string,
-  content: string,
+  content: string | MultimodalContent[],
   options?: {
     type?: "message" | "status" | "error";
     role?: "assistant" | "system";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useCallback } from "react";
-import { usePush, PushMessage } from "../hooks/use-push";
+import { usePush, PushMessage, getTextPreview } from "../hooks/use-push";
 import { useChatStore } from "../store";
 import { showToast } from "./ui-lib";
 
@@ -33,10 +33,7 @@ export function PushProvider({
 
       // 显示通知
       if (success && showNotifications) {
-        const preview =
-          message.content.length > 50
-            ? message.content.slice(0, 50) + "..."
-            : message.content;
+        const preview = getTextPreview(message.content, 50);
         showToast(`New message: ${preview}`);
       }
     },
