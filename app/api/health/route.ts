@@ -1,81 +1,59 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSideConfig } from "@/app/config/server";
 
-const serverConfig = getServerSideConfig();
+// 安总的配置信息 - 备份/默认值
+const DEFAULT_CF_ID = "8645ad22534951ab211fb96a08063d30.access";
+const DEFAULT_CF_SECRET =
+  "2cd9e228c0d906169a0dd7c83f22347aed6eb7fb9d1714db12c588a3e4411544";
 
-export async function GET() {
-  // 从环境变量获取健康检查地址，默认回退到 localhost
-  const healthUrl =
-    process.env.CLAWDBOT_HEALTH_URL || "http://localhost:18789/health";
-  const adminUrl = process.env.CLAWDBOT_ADMIN_URL || "http://localhost:18789";
+async function handle(req: NextRequest) {
+  const adminUrl = process.env.CLAWDBOT_ADMIN_URL || "https://api.enderfga.cn";
+  const healthUrl = `${adminUrl}/health`;
 
-  const fetchOptions: RequestInit = {
-    method: "GET",
-    headers: {},
-  };
-
-  // 如果配置了 Cloudflare Access 凭据，自动注入
-  if (serverConfig.cfAccessClientId && serverConfig.cfAccessClientSecret) {
-    (fetchOptions.headers as any)["CF-Access-Client-Id"] =
-      serverConfig.cfAccessClientId;
-    (fetchOptions.headers as any)["CF-Access-Client-Secret"] =
-      serverConfig.cfAccessClientSecret;
-  }
+  const cfId = process.env.CF_ACCESS_CLIENT_ID || DEFAULT_CF_ID;
+  const cfSecret = process.env.CF_ACCESS_CLIENT_SECRET || DEFAULT_CF_SECRET;
 
   try {
-    const res = await fetch(healthUrl, fetchOptions);
-    // 关键修复：只要能返回状态码（哪怕是 403），就说明链路是通的
+    // 如果是 POST 请求，执行重启
+    if (req.method === "POST") {
+      const { action } = await req.json();
+      if (action === "restart") {
+        await fetch(`${adminUrl}/api/gateway?action=restart`, {
+          method: "POST",
+          headers: {
+            "CF-Access-Client-Id": cfId,
+            "CF-Access-Client-Secret": cfSecret,
+          },
+        });
+        return NextResponse.json({ status: "restarting" });
+      }
+    }
+
+    // 执行健康检查
+    const res = await fetch(healthUrl, {
+      headers: {
+        "CF-Access-Client-Id": cfId,
+        "CF-Access-Client-Secret": cfSecret,
+      },
+      cache: "no-store",
+      next: { revalidate: 0 },
+    });
+
+    // 只要能访问到（不管是 200 还是 Cloudflare 的拦截码），都说明隧道是通的
     if (res.status < 500) {
       return NextResponse.json({
         status: "online",
         adminUrl,
-        message:
-          res.status === 200 ? "OK" : `Reachable but status ${res.status}`,
+        statusCode: res.status,
       });
     }
-    throw new Error(`Health check returned server error ${res.status}`);
-  } catch (error: any) {
-    console.error("[Health Check Error]", error.message);
-    return NextResponse.json(
-      {
-        status: "offline",
-        adminUrl,
-        error: error.message,
-      },
-      { status: 500 },
-    );
+
+    return NextResponse.json({ status: "offline" }, { status: 503 });
+  } catch (e) {
+    console.error("[Health] Check failed", e);
+    return NextResponse.json({ status: "offline" }, { status: 503 });
   }
 }
 
-export async function POST(req: NextRequest) {
-  const { action } = await req.json();
-  const restartUrl =
-    process.env.CLAWDBOT_RESTART_URL || "http://localhost:18789/restart";
-
-  if (action === "restart") {
-    const fetchOptions: RequestInit = {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    };
-
-    if (serverConfig.cfAccessClientId && serverConfig.cfAccessClientSecret) {
-      (fetchOptions.headers as any)["CF-Access-Client-Id"] =
-        serverConfig.cfAccessClientId;
-      (fetchOptions.headers as any)["CF-Access-Client-Secret"] =
-        serverConfig.cfAccessClientSecret;
-    }
-
-    try {
-      await fetch(restartUrl, fetchOptions);
-      return NextResponse.json({ message: "Restarting..." });
-    } catch (error: any) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-  }
-
-  return NextResponse.json({ error: "Invalid action" }, { status: 400 });
-}
-
+export const GET = handle;
+export const POST = handle;
 export const runtime = "edge";

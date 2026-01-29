@@ -411,14 +411,6 @@ export function SideBar(props: { className?: string }) {
             </div>
             <div className={styles["sidebar-action"]}>
               <IconButton
-                icon={<ReloadIcon />}
-                onClick={handleRestart}
-                title="重启 Gateway"
-                shadow
-              />
-            </div>
-            <div className={styles["sidebar-action"]}>
-              <IconButton
                 icon={<ConnectionIcon />}
                 onClick={() => {
                   const url = adminUrl || (window as any).__CLAWDBOT_ADMIN_URL;
@@ -429,6 +421,14 @@ export function SideBar(props: { className?: string }) {
                   }
                 }}
                 title="打开 Clawdbot Web"
+                shadow
+              />
+            </div>
+            <div className={styles["sidebar-action"]}>
+              <IconButton
+                icon={<ReloadIcon />}
+                onClick={handleRestart}
+                title="重启 Gateway"
                 shadow
               />
             </div>
