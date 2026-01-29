@@ -493,7 +493,8 @@ export const VISION_MODEL_REGEXES = [
   /o3/,
   /o4-mini/,
   /grok-4/i,
-  /gpt-5/
+  /gpt-5/,
+  /clawdbot/i,  // Clawdbot Gateway 默认支持 vision（后端使用 Claude）
 ];
 
 export const EXCLUDE_VISION_MODEL_REGEXES = [/claude-3-5-haiku-20241022/];
