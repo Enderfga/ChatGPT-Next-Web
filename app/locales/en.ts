@@ -306,6 +306,15 @@ const en: LocaleType = {
       NoAccess: "Enter API Key to check balance",
     },
     Access: {
+      Clawdbot: {
+        Title: "Clawdbot Status",
+        SubTitle: "View and manage Clawdbot daemon",
+        Health: "Check Health",
+        Restart: "Restart",
+        RestartConfirm:
+          "Are you sure you want to restart Clawdbot? This may disconnect current session.",
+        GoToSasha: "Go To Sasha",
+      },
       SaasStart: {
         Title: "Use NextChat AI",
         Label: " (Most Cost-Effective Option)",

@@ -32,6 +32,8 @@ import {
 import { ModelConfigList } from "./model-config";
 
 import { IconButton } from "./button";
+import PowerIcon from "../icons/power.svg";
+import RobotIcon from "../icons/robot.svg";
 import {
   SubmitKey,
   useChatStore,
@@ -1475,6 +1477,36 @@ export function Settings() {
     </>
   );
 
+  const [healthStatus, setHealthStatus] = useState<string>("");
+  const [checkingHealth, setCheckingHealth] = useState<boolean>(false);
+
+  const checkHealth = async () => {
+    setCheckingHealth(true);
+    try {
+      const res = await fetch("/api/health");
+      const data = await res.json();
+      setHealthStatus(data.status === "online" ? data.details : data.error);
+    } catch (e) {
+      setHealthStatus("Check failed");
+    } finally {
+      setCheckingHealth(false);
+    }
+  };
+
+  const restartClawdbot = async () => {
+    if (await showConfirm(Locale.Settings.Access.Clawdbot.RestartConfirm)) {
+      try {
+        await fetch("/api/health", {
+          method: "POST",
+          body: JSON.stringify({ action: "restart" }),
+        });
+        showToast("Restart command sent");
+      } catch (e) {
+        showToast("Restart failed");
+      }
+    }
+  };
+
   return (
     <ErrorBoundary>
       <div className="window-header" data-tauri-drag-region>
@@ -1792,6 +1824,29 @@ export function Settings() {
         </List>
 
         <List id={SlotID.CustomModel}>
+          <ListItem
+            title={Locale.Settings.Access.Clawdbot.Title}
+            subTitle={healthStatus || Locale.Settings.Access.Clawdbot.SubTitle}
+          >
+            <div style={{ display: "flex" }}>
+              <IconButton
+                icon={checkingHealth ? <LoadingIcon /> : <ConnectionIcon />}
+                text={Locale.Settings.Access.Clawdbot.Health}
+                onClick={checkHealth}
+              />
+              <IconButton
+                icon={<PowerIcon />}
+                text={Locale.Settings.Access.Clawdbot.Restart}
+                onClick={restartClawdbot}
+              />
+              <IconButton
+                icon={<RobotIcon />}
+                text={Locale.Settings.Access.Clawdbot.GoToSasha}
+                onClick={() => window.open("https://clawd.bot", "_blank")}
+              />
+            </div>
+          </ListItem>
+
           {saasStartComponent}
           {accessCodeComponent}
 

@@ -12,6 +12,8 @@ import MaskIcon from "../icons/mask.svg";
 import McpIcon from "../icons/mcp.svg";
 import DragIcon from "../icons/drag.svg";
 import DiscoveryIcon from "../icons/discovery.svg";
+import ReloadIcon from "../icons/reload.svg";
+import ConnectionIcon from "../icons/connection.svg";
 
 import Locale from "../locales";
 
@@ -232,6 +234,45 @@ export function SideBar(props: { className?: string }) {
   const chatStore = useChatStore();
   const [mcpEnabled, setMcpEnabled] = useState(false);
 
+  // Health check states
+  const [healthStatus, setHealthStatus] = useState<
+    "online" | "offline" | "loading"
+  >("loading");
+
+  const checkHealth = async () => {
+    try {
+      const res = await fetch("/api/health");
+      if (res.ok) {
+        setHealthStatus("online");
+      } else {
+        setHealthStatus("offline");
+      }
+    } catch {
+      setHealthStatus("offline");
+    }
+  };
+
+  const handleRestart = async () => {
+    if (await showConfirm("确定要重启 Clawdbot 吗？")) {
+      setHealthStatus("loading");
+      try {
+        await fetch("/api/health", {
+          method: "POST",
+          body: JSON.stringify({ action: "restart" }),
+        });
+        setTimeout(checkHealth, 5000); // 5秒后尝试重连
+      } catch (e) {
+        console.error("Restart failed", e);
+      }
+    }
+  };
+
+  useEffect(() => {
+    checkHealth();
+    const timer = setInterval(checkHealth, 30000); // 每30秒检查一次
+    return () => clearInterval(timer);
+  }, []);
+
   useEffect(() => {
     // 检查 MCP 是否启用
     const checkMcpStatus = async () => {
@@ -335,6 +376,48 @@ export function SideBar(props: { className?: string }) {
                 />
               </Link>
             </div>
+            <div className={styles["sidebar-action"]}>
+              <IconButton
+                icon={<ReloadIcon />}
+                onClick={handleRestart}
+                title="重启 Gateway"
+                shadow
+              />
+            </div>
+            <div className={styles["sidebar-action"]}>
+              <IconButton
+                icon={<ConnectionIcon />}
+                onClick={() => window.open("http://localhost:18789", "_blank")}
+                title="打开 Clawdbot Web"
+                shadow
+              />
+            </div>
+            {!shouldNarrow && (
+              <div
+                className={styles["sidebar-action"]}
+                style={{
+                  marginLeft: "10px",
+                  display: "flex",
+                  alignItems: "center",
+                  fontSize: "12px",
+                  color: healthStatus === "online" ? "#3fb950" : "#f85149",
+                }}
+              >
+                <div
+                  style={{
+                    width: "8px",
+                    height: "8px",
+                    borderRadius: "50%",
+                    backgroundColor:
+                      healthStatus === "online" ? "#3fb950" : "#f85149",
+                    marginRight: "4px",
+                    boxShadow:
+                      healthStatus === "online" ? "0 0 5px #3fb950" : "none",
+                  }}
+                />
+                {healthStatus.toUpperCase()}
+              </div>
+            )}
           </>
         }
         secondaryAction={
