@@ -1736,6 +1736,17 @@ function _Chat() {
           <div className="window-actions">
             <div className="window-action-button">
               <IconButton
+                icon={<CopyIcon />}
+                text={isMobileScreen ? "" : session.id.slice(0, 8) + "..."}
+                title={Locale.Chat.Config.SessionId + ": " + session.id}
+                onClick={() => {
+                  copyToClipboard(session.id);
+                  showToast(Locale.Chat.Config.Copied);
+                }}
+              />
+            </div>
+            <div className="window-action-button">
+              <IconButton
                 icon={<ReloadIcon />}
                 bordered
                 title={Locale.Chat.Actions.RefreshTitle}

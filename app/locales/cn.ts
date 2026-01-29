@@ -94,6 +94,8 @@ const cn = {
     Config: {
       Reset: "清除记忆",
       SaveAs: "存为面具",
+      SessionId: "会话 ID",
+      Copied: "已复制到剪切板",
     },
     IsContext: "预设提示词",
     ShortcutKey: {
