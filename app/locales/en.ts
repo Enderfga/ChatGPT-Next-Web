@@ -8,8 +8,7 @@ const isApp = !!getClientConfig()?.isApp;
 const en: LocaleType = {
   WIP: "Coming Soon...",
   Error: {
-    Unauthorized: `🔐 This site requires an access code.
-     \\ 👉 [Click here](/#/auth) to enter your password`,
+    Unauthorized: `🔐 This site requires an access code.\n👉 [Click here](/#/auth) to enter your password`,
   },
   Auth: {
     Return: "Return",
