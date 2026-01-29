@@ -123,6 +123,7 @@ import { MsEdgeTTS, OUTPUT_FORMAT } from "../utils/ms_edge_tts";
 import { isEmpty } from "lodash-es";
 import { getModelProvider } from "../utils/model";
 import { RealtimeChat } from "@/app/components/realtime-chat";
+import { VoiceInputButton } from "@/app/components/voice-input-button";
 import clsx from "clsx";
 import { getAvailableClientsCount, isMcpEnabled } from "../mcp/actions";
 
@@ -2116,6 +2117,13 @@ function _Chat() {
                     })}
                   </div>
                 )}
+                <VoiceInputButton
+                  onTranscript={(text) => {
+                    setUserInput((prev) => prev + text);
+                  }}
+                  language="zh-CN"
+                  disabled={ChatControllerPool.hasPending()}
+                />
                 <IconButton
                   icon={<SendWhiteIcon />}
                   text={Locale.Chat.Send}

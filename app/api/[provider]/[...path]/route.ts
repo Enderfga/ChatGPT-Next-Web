@@ -63,7 +63,9 @@ async function handle(
 export const GET = handle;
 export const POST = handle;
 
-export const runtime = "edge";
+// 改用 nodejs runtime 以获得更长的超时时间（60秒 vs edge 的 10 秒）
+export const runtime = "nodejs";
+export const maxDuration = 60; // Vercel Pro 可以设置更长
 export const preferredRegion = [
   "arn1",
   "bom1",

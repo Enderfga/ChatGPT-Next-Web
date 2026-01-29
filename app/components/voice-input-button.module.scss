@@ -1,0 +1,94 @@
+.voice-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.voice-input-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: var(--second);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-right: 8px;
+
+  svg {
+    width: 20px;
+    height: 20px;
+    fill: var(--black);
+  }
+
+  &:hover {
+    background: var(--hover-color);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &.listening {
+    background: #ef4444;
+    animation: pulse 1.5s ease-in-out infinite;
+
+    svg {
+      fill: white;
+    }
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+  }
+}
+
+.interim-transcript {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--black);
+  color: var(--white);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  white-space: nowrap;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 8px;
+  z-index: 100;
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: var(--black);
+  }
+}
+
+.error {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #ef4444;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  margin-bottom: 8px;
+}

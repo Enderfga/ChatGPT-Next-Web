@@ -93,13 +93,41 @@ export async function preProcessImageContentBase(
   return result;
 }
 
+// 解析 data URL，提取 media_type 和 base64 数据
+function parseDataUrl(
+  dataUrl: string,
+): { mediaType: string; data: string } | null {
+  const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+  if (match) {
+    return { mediaType: match[1], data: match[2] };
+  }
+  return null;
+}
+
 export async function preProcessImageContent(
   content: RequestMessage["content"],
 ) {
-  return preProcessImageContentBase(content, async (url) => ({
-    type: "image_url",
-    image_url: { url },
-  })) as Promise<MultimodalContent[] | string>;
+  return preProcessImageContentBase(content, async (url) => {
+    // 检查是否是 base64 data URL
+    const parsed = parseDataUrl(url);
+    if (parsed) {
+      // 返回包含显式 media_type 的格式，让 Clawdbot 能正确解析
+      return {
+        type: "image_url",
+        image_url: {
+          url,
+          // 添加显式的 detail 字段，有些后端需要
+          detail: "auto",
+        },
+        // 额外添加 media_type 信息，方便后端解析
+        _media_type: parsed.mediaType,
+      };
+    }
+    return {
+      type: "image_url",
+      image_url: { url },
+    };
+  }) as Promise<MultimodalContent[] | string>;
 }
 
 export async function preProcessImageContentForAlibabaDashScope(
