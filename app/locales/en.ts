@@ -8,13 +8,8 @@ const isApp = !!getClientConfig()?.isApp;
 const en: LocaleType = {
   WIP: "Coming Soon...",
   Error: {
-    Unauthorized: isApp
-      ? `😆 Oops, there's an issue. No worries:
-     \\ 2️⃣ Want to use your own OpenAI resources? [Click here](/#/settings) to change settings ⚙️`
-      : `😆 Oops, there's an issue. Let's fix it:
-     \ 2️⃣ Using a private setup? [Click here](/#/auth) to enter your key 🔑
-     \ 3️⃣ Want to use your own OpenAI resources? [Click here](/#/settings) to change settings ⚙️
-     `,
+    Unauthorized: `🔐 This site requires an access code.
+     \\ 👉 [Click here](/#/auth) to enter your password`,
   },
   Auth: {
     Return: "Return",
