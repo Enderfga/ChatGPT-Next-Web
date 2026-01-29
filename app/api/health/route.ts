@@ -9,8 +9,12 @@ async function handle(req: NextRequest) {
   const adminUrl = process.env.CLAWDBOT_ADMIN_URL || "https://api.enderfga.cn";
   const healthUrl = `${adminUrl}/health`;
 
-  const cfId = process.env.CF_ACCESS_CLIENT_ID || DEFAULT_CF_ID;
-  const cfSecret = process.env.CF_ACCESS_CLIENT_SECRET || DEFAULT_CF_SECRET;
+  const cfId =
+    process.env.CF_ACCESS_CLIENT_ID ||
+    "8645ad22534951ab211fb96a08063d30.access";
+  const cfSecret =
+    process.env.CF_ACCESS_CLIENT_SECRET ||
+    "2cd9e228c0d906169a0dd7c83f22347aed6eb7fb9d1714db12c588a3e4411544";
 
   try {
     // 如果是 POST 请求，执行重启

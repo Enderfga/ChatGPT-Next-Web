@@ -249,7 +249,7 @@ export function SideBarTail(props: {
                 ? "pulse 2s infinite"
                 : "none",
             cursor: "help",
-            marginLeft: "10px",
+            marginLeft: "0px",
             alignSelf: "center",
           }}
         />
