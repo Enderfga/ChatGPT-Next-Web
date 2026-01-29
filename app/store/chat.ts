@@ -536,15 +536,44 @@ export const useChatStore = createPersistStore(
           },
           onError(error) {
             const isAborted = error.message?.includes?.("aborted");
-            botMessage.content +=
-              "\n\n" +
-              prettyObject({
-                error: true,
-                message: error.message,
-              });
-            botMessage.streaming = false;
-            userMessage.isError = !isAborted;
-            botMessage.isError = !isAborted;
+            const errorMsg = error.message?.toLowerCase?.() || "";
+
+            // 检测网关超时相关错误（Vercel Edge Function 超时）
+            const isGatewayTimeout =
+              errorMsg.includes("504") ||
+              errorMsg.includes("502") ||
+              errorMsg.includes("520") ||
+              errorMsg.includes("timeout") ||
+              errorMsg.includes("failed to fetch") ||
+              errorMsg.includes("network") ||
+              errorMsg.includes("an error occurred with your deployment");
+
+            if (isGatewayTimeout && !isAborted) {
+              // 网关超时 - 不显示错误，改为友好提示
+              // 结果可能会通过 push API 送达
+              botMessage.content =
+                "⏳ 处理中，请稍候...\n\n（响应可能需要较长时间，结果将通过推送发送）";
+              botMessage.streaming = false;
+              // 不标记为错误，因为结果可能稍后到达
+              userMessage.isError = false;
+              botMessage.isError = false;
+              console.log(
+                "[Chat] Gateway timeout, waiting for push response...",
+              );
+            } else {
+              // 其他错误 - 正常处理
+              botMessage.content +=
+                "\n\n" +
+                prettyObject({
+                  error: true,
+                  message: error.message,
+                });
+              botMessage.streaming = false;
+              userMessage.isError = !isAborted;
+              botMessage.isError = !isAborted;
+              console.error("[Chat] failed ", error);
+            }
+
             get().updateTargetSession(session, (session) => {
               session.messages = session.messages.concat();
             });
@@ -552,8 +581,6 @@ export const useChatStore = createPersistStore(
               session.id,
               botMessage.id ?? messageIndex,
             );
-
-            console.error("[Chat] failed ", error);
           },
           onController(controller) {
             // collect controller for stop/retry
