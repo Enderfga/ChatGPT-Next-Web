@@ -243,7 +243,11 @@ export function SideBar(props: { className?: string }) {
     try {
       const res = await fetch("/api/health");
       if (res.ok) {
+        const data = await res.json();
         setHealthStatus("online");
+        if (data.adminUrl) {
+          (window as any).__CLAWDBOT_ADMIN_URL = data.adminUrl;
+        }
       } else {
         setHealthStatus("offline");
       }
@@ -387,7 +391,13 @@ export function SideBar(props: { className?: string }) {
             <div className={styles["sidebar-action"]}>
               <IconButton
                 icon={<ConnectionIcon />}
-                onClick={() => window.open("http://localhost:18789", "_blank")}
+                onClick={() =>
+                  window.open(
+                    (window as any).__CLAWDBOT_ADMIN_URL ||
+                      "http://localhost:18789",
+                    "_blank",
+                  )
+                }
                 title="打开 Clawdbot Web"
                 shadow
               />
