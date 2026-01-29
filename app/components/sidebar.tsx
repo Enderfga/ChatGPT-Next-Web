@@ -7,9 +7,7 @@ import SettingsIcon from "../icons/settings.svg";
 // GithubIcon removed - no ads
 import ChatGptIcon from "../icons/chatgpt.svg";
 import AddIcon from "../icons/add.svg";
-import DeleteIcon from "../icons/delete.svg";
 import MaskIcon from "../icons/mask.svg";
-import McpIcon from "../icons/mcp.svg";
 import DragIcon from "../icons/drag.svg";
 import DiscoveryIcon from "../icons/discovery.svg";
 import ReloadIcon from "../icons/reload.svg";
@@ -301,6 +299,20 @@ export function SideBar(props: { className?: string }) {
       >
         <div className={styles["sidebar-header-bar"]}>
           <IconButton
+            icon={<AddIcon />}
+            text={shouldNarrow ? undefined : Locale.Home.NewChat}
+            className={styles["sidebar-bar-button"]}
+            onClick={() => {
+              if (config.dontShowMaskSplashScreen) {
+                chatStore.newSession();
+                navigate(Path.Chat);
+              } else {
+                navigate(Path.NewChat);
+              }
+            }}
+            shadow
+          />
+          <IconButton
             icon={<MaskIcon />}
             text={shouldNarrow ? undefined : Locale.Mask.Name}
             className={styles["sidebar-bar-button"]}
@@ -313,17 +325,6 @@ export function SideBar(props: { className?: string }) {
             }}
             shadow
           />
-          {mcpEnabled && (
-            <IconButton
-              icon={<McpIcon />}
-              text={shouldNarrow ? undefined : Locale.Mcp.Name}
-              className={styles["sidebar-bar-button"]}
-              onClick={() => {
-                navigate(Path.McpMarket, { state: { fromHome: true } });
-              }}
-              shadow
-            />
-          )}
           <IconButton
             icon={<DiscoveryIcon />}
             text={shouldNarrow ? undefined : Locale.Discovery.Name}
@@ -361,13 +362,36 @@ export function SideBar(props: { className?: string }) {
       <SideBarTail
         primaryAction={
           <>
-            <div className={clsx(styles["sidebar-action"], styles.mobile)}>
-              <IconButton
-                icon={<DeleteIcon />}
-                onClick={async () => {
-                  if (await showConfirm(Locale.Home.DeleteChat)) {
-                    chatStore.deleteSession(chatStore.currentSessionIndex);
-                  }
+            <div className={styles["sidebar-action"]}>
+              <div
+                title={
+                  healthStatus === "online"
+                    ? "Clawdbot Online"
+                    : healthStatus === "loading"
+                    ? "Checking..."
+                    : "Clawdbot Offline"
+                }
+                style={{
+                  width: "12px",
+                  height: "12px",
+                  borderRadius: "50%",
+                  backgroundColor:
+                    healthStatus === "online"
+                      ? "#3fb950"
+                      : healthStatus === "loading"
+                      ? "#ebb10d"
+                      : "#f85149",
+                  boxShadow:
+                    healthStatus === "online"
+                      ? "0 0 8px #3fb950"
+                      : healthStatus === "loading"
+                      ? "0 0 8px #ebb10d"
+                      : "none",
+                  animation:
+                    healthStatus === "online" || healthStatus === "loading"
+                      ? "pulse 2s infinite"
+                      : "none",
+                  cursor: "help",
                 }}
               />
             </div>
@@ -402,48 +426,7 @@ export function SideBar(props: { className?: string }) {
                 shadow
               />
             </div>
-            {!shouldNarrow && (
-              <div
-                className={styles["sidebar-action"]}
-                style={{
-                  marginLeft: "10px",
-                  display: "flex",
-                  alignItems: "center",
-                  fontSize: "12px",
-                  color: healthStatus === "online" ? "#3fb950" : "#f85149",
-                }}
-              >
-                <div
-                  style={{
-                    width: "8px",
-                    height: "8px",
-                    borderRadius: "50%",
-                    backgroundColor:
-                      healthStatus === "online" ? "#3fb950" : "#f85149",
-                    marginRight: "4px",
-                    boxShadow:
-                      healthStatus === "online" ? "0 0 5px #3fb950" : "none",
-                  }}
-                />
-                {healthStatus.toUpperCase()}
-              </div>
-            )}
           </>
-        }
-        secondaryAction={
-          <IconButton
-            icon={<AddIcon />}
-            text={shouldNarrow ? undefined : Locale.Home.NewChat}
-            onClick={() => {
-              if (config.dontShowMaskSplashScreen) {
-                chatStore.newSession();
-                navigate(Path.Chat);
-              } else {
-                navigate(Path.NewChat);
-              }
-            }}
-            shadow
-          />
         }
       />
     </SideBarContainer>

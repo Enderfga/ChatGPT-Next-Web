@@ -37,6 +37,21 @@
   }
 }
 
+@keyframes pulse {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.95);
+    opacity: 0.7;
+  }
+}
+
 .sidebar {
   top: 0;
   width: var(--sidebar-width);
@@ -324,6 +339,7 @@
 .sidebar-tail {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   padding-top: 20px;
 }
 
