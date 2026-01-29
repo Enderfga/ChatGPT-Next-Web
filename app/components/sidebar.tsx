@@ -212,12 +212,46 @@ export function SideBarBody(props: {
 export function SideBarTail(props: {
   primaryAction?: React.ReactNode;
   secondaryAction?: React.ReactNode;
+  healthStatus?: "online" | "offline" | "loading";
 }) {
-  const { primaryAction, secondaryAction } = props;
+  const { primaryAction, secondaryAction, healthStatus } = props;
 
   return (
     <div className={styles["sidebar-tail"]}>
-      <div className={styles["sidebar-actions"]}>{primaryAction}</div>
+      <div
+        title={
+          healthStatus === "online"
+            ? "Clawdbot Online"
+            : healthStatus === "loading"
+            ? "Checking..."
+            : "Clawdbot Offline"
+        }
+        style={{
+          width: "10px",
+          height: "10px",
+          borderRadius: "50%",
+          backgroundColor:
+            healthStatus === "online"
+              ? "#3fb950"
+              : healthStatus === "loading"
+              ? "#ebb10d"
+              : "#f85149",
+          boxShadow:
+            healthStatus === "online"
+              ? "0 0 8px #3fb950"
+              : healthStatus === "loading"
+              ? "0 0 8px #ebb10d"
+              : "none",
+          animation:
+            healthStatus === "online" || healthStatus === "loading"
+              ? "pulse 2s infinite"
+              : "none",
+          cursor: "help",
+          marginRight: "10px",
+          flexShrink: 0,
+        }}
+      />
+      <div className={styles["sidebar-actions-full"]}>{primaryAction}</div>
       <div className={styles["sidebar-actions"]}>{secondaryAction}</div>
     </div>
   );
@@ -360,39 +394,15 @@ export function SideBar(props: { className?: string }) {
         <ChatList narrow={shouldNarrow} />
       </SideBarBody>
       <SideBarTail
+        healthStatus={healthStatus}
         primaryAction={
           <>
             <div className={styles["sidebar-action"]}>
-              <div
-                title={
-                  healthStatus === "online"
-                    ? "Clawdbot Online"
-                    : healthStatus === "loading"
-                    ? "Checking..."
-                    : "Clawdbot Offline"
-                }
-                style={{
-                  width: "12px",
-                  height: "12px",
-                  borderRadius: "50%",
-                  backgroundColor:
-                    healthStatus === "online"
-                      ? "#3fb950"
-                      : healthStatus === "loading"
-                      ? "#ebb10d"
-                      : "#f85149",
-                  boxShadow:
-                    healthStatus === "online"
-                      ? "0 0 8px #3fb950"
-                      : healthStatus === "loading"
-                      ? "0 0 8px #ebb10d"
-                      : "none",
-                  animation:
-                    healthStatus === "online" || healthStatus === "loading"
-                      ? "pulse 2s infinite"
-                      : "none",
-                  cursor: "help",
-                }}
+              <IconButton
+                icon={<ReloadIcon />}
+                onClick={handleRestart}
+                title="重启 Gateway"
+                shadow
               />
             </div>
             <div className={styles["sidebar-action"]}>
@@ -403,14 +413,6 @@ export function SideBar(props: { className?: string }) {
                   shadow
                 />
               </Link>
-            </div>
-            <div className={styles["sidebar-action"]}>
-              <IconButton
-                icon={<ReloadIcon />}
-                onClick={handleRestart}
-                title="重启 Gateway"
-                shadow
-              />
             </div>
             <div className={styles["sidebar-action"]}>
               <IconButton

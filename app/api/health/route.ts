@@ -32,6 +32,14 @@ export async function GET() {
         details: data,
       });
     }
+    // 如果返回 401/403，可能 CF Access 没配对，但也说明后端是通的
+    if (res.status === 401 || res.status === 403) {
+      return NextResponse.json({
+        status: "online",
+        adminUrl,
+        message: "CF Access Error, but server is reachable",
+      });
+    }
     throw new Error(`Health check returned status ${res.status}`);
   } catch (error: any) {
     return NextResponse.json(
