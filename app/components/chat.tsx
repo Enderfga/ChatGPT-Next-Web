@@ -119,6 +119,7 @@ import { useAllModels } from "../utils/hooks";
 import { ClientApi, MultimodalContent } from "../client/api";
 import { createTTSPlayer } from "../utils/audio";
 import { MsEdgeTTS, OUTPUT_FORMAT } from "../utils/ms_edge_tts";
+import { speakText, stopSpeaking } from "../utils/browser-tts";
 
 import { isEmpty } from "lodash-es";
 import { getModelProvider } from "../utils/model";
@@ -1290,44 +1291,63 @@ function _Chat() {
 
   async function openaiSpeech(text: string) {
     if (speechStatus) {
-      ttsPlayer.stop();
+      stopSpeaking();
       setSpeechStatus(false);
-    } else {
-      var api: ClientApi;
-      api = new ClientApi(ModelProvider.GPT);
-      const config = useAppConfig.getState();
-      setSpeechLoading(true);
-      ttsPlayer.init();
-      let audioBuffer: ArrayBuffer;
-      const { markdownToTxt } = require("markdown-to-txt");
-      const textContent = markdownToTxt(text);
-      if (config.ttsConfig.engine !== DEFAULT_TTS_ENGINE) {
-        const edgeVoiceName = accessStore.edgeVoiceName();
-        const tts = new MsEdgeTTS();
-        await tts.setMetadata(
-          edgeVoiceName,
-          OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3,
-        );
-        audioBuffer = await tts.toArrayBuffer(textContent);
-      } else {
-        audioBuffer = await api.llm.speech({
-          model: config.ttsConfig.model,
-          input: textContent,
-          voice: config.ttsConfig.voice,
-          speed: config.ttsConfig.speed,
-        });
+      return;
+    }
+
+    const { markdownToTxt } = require("markdown-to-txt");
+    const textContent = markdownToTxt(text);
+    const config = useAppConfig.getState();
+
+    setSpeechLoading(true);
+    setSpeechStatus(true);
+
+    try {
+      // 优先使用浏览器原生 TTS（免费、无需配置）
+      await speakText(textContent, {
+        lang: "zh-CN",
+        rate: config.ttsConfig.speed || 1,
+      });
+      setSpeechStatus(false);
+    } catch (e) {
+      console.error("[Browser TTS]", e);
+      // 如果浏览器 TTS 失败，尝试其他方式
+      try {
+        if (config.ttsConfig.engine !== DEFAULT_TTS_ENGINE) {
+          // Edge TTS
+          ttsPlayer.init();
+          const edgeVoiceName = accessStore.edgeVoiceName();
+          const tts = new MsEdgeTTS();
+          await tts.setMetadata(
+            edgeVoiceName,
+            OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3,
+          );
+          const audioBuffer = await tts.toArrayBuffer(textContent);
+          await ttsPlayer.play(audioBuffer, () => {
+            setSpeechStatus(false);
+          });
+        } else {
+          // OpenAI TTS
+          ttsPlayer.init();
+          const api = new ClientApi(ModelProvider.GPT);
+          const audioBuffer = await api.llm.speech({
+            model: config.ttsConfig.model,
+            input: textContent,
+            voice: config.ttsConfig.voice,
+            speed: config.ttsConfig.speed,
+          });
+          await ttsPlayer.play(audioBuffer, () => {
+            setSpeechStatus(false);
+          });
+        }
+      } catch (fallbackError) {
+        console.error("[TTS Fallback]", fallbackError);
+        showToast("语音合成失败，请检查浏览器设置");
+        setSpeechStatus(false);
       }
-      setSpeechStatus(true);
-      ttsPlayer
-        .play(audioBuffer, () => {
-          setSpeechStatus(false);
-        })
-        .catch((e) => {
-          console.error("[OpenAI Speech]", e);
-          showToast(prettyObject(e));
-          setSpeechStatus(false);
-        })
-        .finally(() => setSpeechLoading(false));
+    } finally {
+      setSpeechLoading(false);
     }
   }
 
