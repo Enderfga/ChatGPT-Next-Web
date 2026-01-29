@@ -351,13 +351,13 @@
 .sidebar-actions-full {
   display: flex;
   width: 100%;
-  justify-content: space-between;
+  justify-content: flex-start;
+  align-items: center;
 
   .sidebar-action {
-    flex: 1;
     display: flex;
     justify-content: center;
-    margin-right: 0 !important;
+    margin-right: 15px !important;
   }
 }
 

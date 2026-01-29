@@ -24,24 +24,18 @@ export async function GET() {
 
   try {
     const res = await fetch(healthUrl, fetchOptions);
-    if (res.ok) {
-      const data = await res.json();
+    // 关键修复：只要能返回状态码（哪怕是 403），就说明链路是通的
+    if (res.status < 500) {
       return NextResponse.json({
         status: "online",
         adminUrl,
-        details: data,
+        message:
+          res.status === 200 ? "OK" : `Reachable but status ${res.status}`,
       });
     }
-    // 如果返回 401/403，可能 CF Access 没配对，但也说明后端是通的
-    if (res.status === 401 || res.status === 403) {
-      return NextResponse.json({
-        status: "online",
-        adminUrl,
-        message: "CF Access Error, but server is reachable",
-      });
-    }
-    throw new Error(`Health check returned status ${res.status}`);
+    throw new Error(`Health check returned server error ${res.status}`);
   } catch (error: any) {
+    console.error("[Health Check Error]", error.message);
     return NextResponse.json(
       {
         status: "offline",

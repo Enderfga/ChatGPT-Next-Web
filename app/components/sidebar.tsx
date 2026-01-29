@@ -218,41 +218,42 @@ export function SideBarTail(props: {
 
   return (
     <div className={styles["sidebar-tail"]}>
-      <div
-        title={
-          healthStatus === "online"
-            ? "Clawdbot Online"
-            : healthStatus === "loading"
-            ? "Checking..."
-            : "Clawdbot Offline"
-        }
-        style={{
-          width: "10px",
-          height: "10px",
-          borderRadius: "50%",
-          backgroundColor:
+      <div className={styles["sidebar-actions-full"]}>
+        {primaryAction}
+        <div
+          title={
             healthStatus === "online"
-              ? "#3fb950"
+              ? "Clawdbot Online"
               : healthStatus === "loading"
-              ? "#ebb10d"
-              : "#f85149",
-          boxShadow:
-            healthStatus === "online"
-              ? "0 0 8px #3fb950"
-              : healthStatus === "loading"
-              ? "0 0 8px #ebb10d"
-              : "none",
-          animation:
-            healthStatus === "online" || healthStatus === "loading"
-              ? "pulse 2s infinite"
-              : "none",
-          cursor: "help",
-          marginRight: "10px",
-          flexShrink: 0,
-        }}
-      />
-      <div className={styles["sidebar-actions-full"]}>{primaryAction}</div>
-      <div className={styles["sidebar-actions"]}>{secondaryAction}</div>
+              ? "Checking..."
+              : "Clawdbot Offline"
+          }
+          style={{
+            width: "10px",
+            height: "10px",
+            borderRadius: "50%",
+            backgroundColor:
+              healthStatus === "online"
+                ? "#3fb950"
+                : healthStatus === "loading"
+                ? "#ebb10d"
+                : "#f85149",
+            boxShadow:
+              healthStatus === "online"
+                ? "0 0 8px #3fb950"
+                : healthStatus === "loading"
+                ? "0 0 8px #ebb10d"
+                : "none",
+            animation:
+              healthStatus === "online" || healthStatus === "loading"
+                ? "pulse 2s infinite"
+                : "none",
+            cursor: "help",
+            marginLeft: "10px",
+            alignSelf: "center",
+          }}
+        />
+      </div>
     </div>
   );
 }
@@ -270,6 +271,7 @@ export function SideBar(props: { className?: string }) {
   const [healthStatus, setHealthStatus] = useState<
     "online" | "offline" | "loading"
   >("loading");
+  const [adminUrl, setAdminUrl] = useState<string>("");
 
   const checkHealth = async () => {
     try {
@@ -278,6 +280,7 @@ export function SideBar(props: { className?: string }) {
         const data = await res.json();
         setHealthStatus("online");
         if (data.adminUrl) {
+          setAdminUrl(data.adminUrl);
           (window as any).__CLAWDBOT_ADMIN_URL = data.adminUrl;
         }
       } else {
@@ -398,14 +401,6 @@ export function SideBar(props: { className?: string }) {
         primaryAction={
           <>
             <div className={styles["sidebar-action"]}>
-              <IconButton
-                icon={<ReloadIcon />}
-                onClick={handleRestart}
-                title="重启 Gateway"
-                shadow
-              />
-            </div>
-            <div className={styles["sidebar-action"]}>
               <Link to={Path.Settings}>
                 <IconButton
                   aria={Locale.Settings.Title}
@@ -416,14 +411,23 @@ export function SideBar(props: { className?: string }) {
             </div>
             <div className={styles["sidebar-action"]}>
               <IconButton
+                icon={<ReloadIcon />}
+                onClick={handleRestart}
+                title="重启 Gateway"
+                shadow
+              />
+            </div>
+            <div className={styles["sidebar-action"]}>
+              <IconButton
                 icon={<ConnectionIcon />}
-                onClick={() =>
-                  window.open(
-                    (window as any).__CLAWDBOT_ADMIN_URL ||
-                      "http://localhost:18789",
-                    "_blank",
-                  )
-                }
+                onClick={() => {
+                  const url = adminUrl || (window as any).__CLAWDBOT_ADMIN_URL;
+                  if (url) {
+                    window.open(url, "_blank");
+                  } else {
+                    window.open("/api/setting", "_blank");
+                  }
+                }}
                 title="打开 Clawdbot Web"
                 shadow
               />
