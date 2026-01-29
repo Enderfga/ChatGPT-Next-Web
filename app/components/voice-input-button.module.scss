@@ -1,34 +1,41 @@
 .voice-input-wrapper {
-  position: relative;
+  position: absolute;
+  right: 110px; /* 发送按钮左边 */
+  bottom: 32px;
   display: flex;
   align-items: center;
+  z-index: 10;
 }
 
 .voice-input-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border: none;
-  border-radius: 50%;
+  border-radius: 10px;
   background: var(--second);
   cursor: pointer;
-  transition: all 0.3s ease;
-  margin-right: 8px;
+  transition: all 0.2s ease;
 
   svg {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     fill: var(--black);
+    opacity: 0.6;
   }
 
   &:hover {
     background: var(--hover-color);
+    
+    svg {
+      opacity: 1;
+    }
   }
 
   &:disabled {
-    opacity: 0.5;
+    opacity: 0.4;
     cursor: not-allowed;
   }
 
@@ -38,6 +45,7 @@
 
     svg {
       fill: white;
+      opacity: 1;
     }
   }
 }
@@ -48,33 +56,29 @@
     box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
   }
   50% {
-    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
   }
 }
 
 .interim-transcript {
   position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: calc(100% + 8px);
+  right: 0;
   background: var(--black);
   color: var(--white);
   padding: 8px 12px;
   border-radius: 8px;
-  font-size: 12px;
-  white-space: nowrap;
-  max-width: 300px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-bottom: 8px;
+  font-size: 13px;
+  max-width: 280px;
+  word-break: break-word;
   z-index: 100;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 
   &::after {
     content: "";
     position: absolute;
     top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
+    right: 12px;
     border: 6px solid transparent;
     border-top-color: var(--black);
   }
@@ -82,13 +86,29 @@
 
 .error {
   position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: calc(100% + 8px);
+  right: 0;
   background: #ef4444;
   color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: 6px 10px;
+  border-radius: 6px;
   font-size: 12px;
-  margin-bottom: 8px;
+}
+
+/* 移动端适配 */
+@media only screen and (max-width: 600px) {
+  .voice-input-wrapper {
+    right: 100px;
+    bottom: 30px;
+  }
+
+  .voice-input-button {
+    width: 32px;
+    height: 32px;
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
 }
