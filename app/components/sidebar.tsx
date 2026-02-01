@@ -13,6 +13,7 @@ import DiscoveryIcon from "../icons/discovery.svg";
 import ReloadIcon from "../icons/reload.svg";
 import ConnectionIcon from "../icons/connection.svg";
 import TerminalIcon from "../icons/terminal.svg";
+import BookIcon from "../icons/book.svg";
 
 import { TerminalModal } from "./terminal-modal";
 
@@ -598,6 +599,14 @@ export function SideBar(props: { className?: string }) {
                 icon={<TerminalIcon />}
                 onClick={() => setShowTerminal(true)}
                 title="远程终端"
+                shadow
+              />
+            </div>
+            <div className={styles["sidebar-action"]}>
+              <IconButton
+                icon={<BookIcon />}
+                onClick={() => window.open("/docs", "_blank")}
+                title="工具文档"
                 shadow
               />
             </div>
