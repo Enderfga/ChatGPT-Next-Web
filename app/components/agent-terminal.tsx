@@ -20,10 +20,12 @@ export function AgentTerminal() {
   const [status, setStatus] = useState<AgentStatus | null>(null);
   const [history, setHistory] = useState<ToolCall[]>([]);
   const [expanded, setExpanded] = useState(false);
+  const [userInteracted, setUserInteracted] = useState(false);
   const historyRef = useRef<HTMLDivElement>(null);
+  const autoCollapseTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
+    let pollTimer: NodeJS.Timeout;
     let lastTool = "";
     let lastInput = "";
 
@@ -36,12 +38,22 @@ export function AgentTerminal() {
           const data: AgentStatus = await res.json();
           setStatus(data);
 
-          // Auto-expand when agent is active
+          // Auto-expand logic:
+          // 1. If agent starts working/thinking and user hasn't explicitly CLOSED it
           if (data.state !== "idle" && data.ok) {
-            setExpanded(true);
+            // Only auto-expand if the user hasn't manually collapsed it recently
+            if (!userInteracted || expanded) {
+              setExpanded(true);
+            }
+
+            // Clear any pending collapse timer because agent is busy
+            if (autoCollapseTimerRef.current) {
+              clearTimeout(autoCollapseTimerRef.current);
+              autoCollapseTimerRef.current = null;
+            }
           }
 
-          // Add to history when tool changes
+          // Add to history
           if (data.currentTool && data.details) {
             const input = formatInput(data.details);
             const toolKey = `${data.currentTool}:${input}`;
@@ -51,46 +63,61 @@ export function AgentTerminal() {
               setHistory((prev) => {
                 const newHistory = [
                   ...prev,
-                  {
-                    tool: data.currentTool!,
-                    input,
-                    timestamp: Date.now(),
-                  },
+                  { tool: data.currentTool!, input, timestamp: Date.now() },
                 ];
-                // Keep last 20 entries
-                return newHistory.slice(-20);
+                return newHistory.slice(-50);
               });
             }
           }
 
-          // Auto-collapse after 10 seconds of idle
-          if (data.state === "idle") {
-            setTimeout(() => {
-              setStatus((current) => {
-                if (current?.state === "idle") {
-                  setExpanded(false);
-                }
-                return current;
-              });
-            }, 10000);
+          // Auto-collapse logic:
+          // Only auto-collapse if:
+          // 1. Agent is idle
+          // 2. User HAS NOT manually interacted (expanded it themselves)
+          if (data.state === "idle" && !userInteracted) {
+            if (!autoCollapseTimerRef.current) {
+              autoCollapseTimerRef.current = setTimeout(() => {
+                // Double check status is still idle before collapsing
+                setExpanded(false);
+                autoCollapseTimerRef.current = null;
+              }, 10000);
+            }
           }
         }
       } catch (e) {
         // Silent fail
       }
-      timer = setTimeout(poll, 500); // Fast polling for real-time updates
+      pollTimer = setTimeout(poll, 500);
     };
 
     poll();
-    return () => clearTimeout(timer);
-  }, []);
+    return () => {
+      clearTimeout(pollTimer);
+      if (autoCollapseTimerRef.current)
+        clearTimeout(autoCollapseTimerRef.current);
+    };
+  }, [userInteracted, expanded]); // Add expanded to deps to ensure logic reacts to manual toggle
+
+  const toggleExpand = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const nextState = !expanded;
+    setExpanded(nextState);
+    // If user manually toggles, we mark as interacted
+    // and stop all automatic expansion/collapsing for a while
+    setUserInteracted(true);
+
+    if (autoCollapseTimerRef.current) {
+      clearTimeout(autoCollapseTimerRef.current);
+      autoCollapseTimerRef.current = null;
+    }
+  };
 
   // Auto-scroll history
   useEffect(() => {
     if (historyRef.current) {
       historyRef.current.scrollTop = historyRef.current.scrollHeight;
     }
-  }, [history]);
+  }, [history, expanded]);
 
   const formatInput = (details: any): string => {
     if (!details) return "";
@@ -139,17 +166,15 @@ export function AgentTerminal() {
     return labels[state] || state;
   };
 
-  // Don't render if no status
   if (!status?.ok) return null;
 
-  // Compact mode when idle and no recent history
   const isCompact = status.state === "idle" && !expanded;
 
   if (isCompact) {
     return (
       <div
         className={`${styles.terminal} ${styles.compact}`}
-        onClick={() => setExpanded(true)}
+        onClick={toggleExpand}
       >
         <div className={styles.header}>
           <span className={styles.title}>Sasha</span>
@@ -163,7 +188,7 @@ export function AgentTerminal() {
 
   return (
     <div className={styles.terminal}>
-      <div className={styles.header} onClick={() => setExpanded(!expanded)}>
+      <div className={styles.header} onClick={toggleExpand}>
         <span className={styles.title}>Sasha Agent</span>
         <span className={`${styles.status} ${styles[status.state]}`}>
           {getStateLabel(status.state)}
