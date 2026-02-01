@@ -491,6 +491,21 @@ export function SideBar(props: { className?: string }) {
             }}
             shadow
           />
+          <Link to={Path.Settings}>
+            <IconButton
+              icon={<SettingsIcon />}
+              text={shouldNarrow ? undefined : Locale.Settings.Title}
+              className={styles["sidebar-bar-button"]}
+              shadow
+            />
+          </Link>
+          <IconButton
+            icon={<BookIcon />}
+            text={shouldNarrow ? undefined : "文档"}
+            className={styles["sidebar-bar-button"]}
+            onClick={() => window.open("/docs", "_blank")}
+            shadow
+          />
         </div>
         {showModelSelector && (
           <Selector
@@ -521,15 +536,6 @@ export function SideBar(props: { className?: string }) {
         primaryAction={
           <>
             <div className={styles["sidebar-action"]}>
-              <Link to={Path.Settings}>
-                <IconButton
-                  aria={Locale.Settings.Title}
-                  icon={<SettingsIcon />}
-                  shadow
-                />
-              </Link>
-            </div>
-            <div className={styles["sidebar-action"]}>
               <IconButton
                 icon={<ConnectionIcon />}
                 onClick={() => {
@@ -554,14 +560,6 @@ export function SideBar(props: { className?: string }) {
                 icon={<TerminalIcon />}
                 onClick={() => setShowTerminal(true)}
                 title="远程终端"
-                shadow
-              />
-            </div>
-            <div className={styles["sidebar-action"]}>
-              <IconButton
-                icon={<BookIcon />}
-                onClick={() => window.open("/docs", "_blank")}
-                title="工具文档"
                 shadow
               />
             </div>

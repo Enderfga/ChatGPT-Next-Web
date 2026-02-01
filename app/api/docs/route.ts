@@ -1,16 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
-  // 通过 Cloudflare Tunnel 访问 sasha-doctor
   const adminUrl = process.env.CLAWDBOT_ADMIN_URL || "https://api.enderfga.cn";
   const docsUrl = `${adminUrl}/sasha-doctor/docs`;
+
+  const cfId = process.env.CF_ACCESS_CLIENT_ID;
+  const cfSecret = process.env.CF_ACCESS_CLIENT_SECRET;
+
+  if (!cfId || !cfSecret) {
+    return NextResponse.json(
+      { error: "CF Access credentials not configured" },
+      { status: 500 },
+    );
+  }
 
   try {
     console.log("[Docs API] Fetching from:", docsUrl);
     const res = await fetch(docsUrl, {
       method: "GET",
-      headers: { "Content-Type": "application/json" },
-      // 不缓存，确保获取最新内容
+      headers: {
+        "Content-Type": "application/json",
+        "CF-Access-Client-Id": cfId,
+        "CF-Access-Client-Secret": cfSecret,
+      },
       cache: "no-store",
     });
 
