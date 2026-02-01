@@ -7,26 +7,8 @@ const isApp = !!getClientConfig()?.isApp;
 const no: PartialLocaleType = {
   WIP: "Arbeid pågår ...",
   Error: {
-    Unauthorized: isApp
-      ? `😆 Samtalen har støtt på noen problemer, ikke bekymre deg:
-    \\ 2️⃣ Hvis du vil bruke dine egne OpenAI-ressurser, klikk [her](/#/settings) for å endre innstillingene ⚙️`
-      : `😆 Samtalen har støtt på noen problemer, ikke bekymre deg:
-    \ 2️⃣ Hvis du bruker en privat distribusjonsversjon, klikk [her](/#/auth) for å skrive inn tilgangsnøkkelen 🔑
-    \ 3️⃣ Hvis du vil bruke dine egne OpenAI-ressurser, klikk [her](/#/settings) for å endre innstillingene ⚙️
- `,
-  },
-  Auth: {
-    Title: "Passord påkrevd",
-    Tips: "Administrator har aktivert passordbeskyttelse. Vennligst skriv inn tilgangskoden nedenfor",
-    SubTips: "Eller skriv inn din OpenAI eller Google API-nøkkel",
-    Input: "Skriv tilgangskoden her",
-    Confirm: "Bekreft",
-    Later: "Kom tilbake senere",
-    Return: "Tilbake",
-    SaasTips:
-      "Konfigurasjonen er for komplisert, jeg vil bruke det med en gang",
-    TopTips:
-      "🥳 NextChat AI lanseringstilbud, lås opp OpenAI o1, GPT-4o, Claude-3.5 og de nyeste store modellene nå",
+    Unauthorized: `🔐 Dette nettstedet krever en tilgangskode.
+👉 [Klikk her](/#/auth) for å skrive inn passordet`,
   },
   ChatItem: {
     ChatItemCount: (count: number) => `${count} samtaler`,

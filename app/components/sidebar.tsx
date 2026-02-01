@@ -12,6 +12,9 @@ import DragIcon from "../icons/drag.svg";
 import DiscoveryIcon from "../icons/discovery.svg";
 import ReloadIcon from "../icons/reload.svg";
 import ConnectionIcon from "../icons/connection.svg";
+import TerminalIcon from "../icons/terminal.svg";
+
+import { TerminalModal } from "./terminal-modal";
 
 import Locale from "../locales";
 
@@ -28,7 +31,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { isIOS, useMobileScreen } from "../utils";
 import dynamic from "next/dynamic";
-import { Selector, showConfirm } from "./ui-lib";
+import { Selector, showConfirm, showToast } from "./ui-lib";
 import clsx from "clsx";
 import { isMcpEnabled } from "../mcp/actions";
 
@@ -262,10 +265,32 @@ export function SideBar(props: { className?: string }) {
   useHotKey();
   const { onDragStart, shouldNarrow } = useDragSideBar();
   const [showDiscoverySelector, setshowDiscoverySelector] = useState(false);
+  const [showModelSelector, setShowModelSelector] = useState(false);
+  const [showTerminal, setShowTerminal] = useState(false);
   const navigate = useNavigate();
   const config = useAppConfig();
   const chatStore = useChatStore();
   const [mcpEnabled, setMcpEnabled] = useState(false);
+
+  const session = chatStore.currentSession();
+  const currentModel = session.mask.modelConfig.model;
+
+  // 只有选中了 Clawdbot（通常是列表第一个，名称包含 opus-4-5）才显示
+  const isClawdbotSelected = currentModel.toLowerCase().includes("opus-4-5");
+
+  const MODEL_OPTIONS = [
+    { title: "Gemini 3 Flash", value: "google/gemini-3-flash-preview" },
+    { title: "Azure GPT-4o", value: "azure/gpt-4o" },
+    { title: "Claude 4.5 Opus", value: "anthropic/claude-opus-4-5" },
+  ];
+
+  const getModelName = (model: string) => {
+    if (model.includes("gemini")) return "Gemini 3 Flash";
+    if (model.includes("gpt-4o")) return "GPT-4o (Azure)";
+    if (model.includes("opus") || model.includes("claude-4.5"))
+      return "Claude 4.5 Opus";
+    return "Unknown Model";
+  };
 
   // Health check states
   const [healthStatus, setHealthStatus] = useState<
@@ -273,12 +298,22 @@ export function SideBar(props: { className?: string }) {
   >("loading");
   const [adminUrl, setAdminUrl] = useState<string>("");
 
+  // 当前后端真实运行的模型（由 API 返回）
+  const [backendModel, setBackendModel] = useState<string>("");
+
   const checkHealth = async () => {
     try {
       const res = await fetch("/api/health");
       if (res.ok) {
         const data = await res.json();
-        setHealthStatus("online");
+        // 检查实际的 status 字段，而不只是 HTTP 状态
+        if (data.status === "online") {
+          setHealthStatus("online");
+        } else {
+          // degraded, offline, 或其他状态都视为 offline
+          setHealthStatus("offline");
+        }
+        if (data.model) setBackendModel(data.model);
         if (data.adminUrl) {
           setAdminUrl(data.adminUrl);
           (window as any).__CLAWDBOT_ADMIN_URL = data.adminUrl;
@@ -292,32 +327,68 @@ export function SideBar(props: { className?: string }) {
   };
 
   const handleRestart = async () => {
-    if (await showConfirm("确定要重启 Clawdbot 吗？")) {
+    if (
+      await showConfirm(
+        "确定要重启 Clawdbot 吗？\n\n如果普通重启失败，将自动尝试智能修复 (doctor --fix)",
+      )
+    ) {
       setHealthStatus("loading");
       try {
-        await fetch("/api/health", {
+        const res = await fetch("/api/health", {
           method: "POST",
-          body: JSON.stringify({ action: "restart" }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "restart-smart" }),
         });
-        setTimeout(checkHealth, 5000); // 5秒后尝试重连
+
+        const data = await res.json();
+        if (data.status === "restarted") {
+          showToast("✅ 重启成功");
+        } else if (data.status === "error") {
+          showToast("⚠️ 重启失败: " + (data.message || "未知错误"));
+        }
+        setTimeout(checkHealth, 5000);
       } catch (e) {
         console.error("Restart failed", e);
+        showToast("❌ 重启请求失败");
+      }
+    }
+  };
+
+  const handleModelChange = async (newModel: string) => {
+    if (
+      await showConfirm(
+        `确定要将 Clawdbot 的主模型切换为 ${newModel} 吗？\n\n这会导致后端服务立即重启。`,
+      )
+    ) {
+      setHealthStatus("loading");
+      try {
+        const res = await fetch("/api/health", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "switch-model", model: newModel }),
+        });
+        if (res.ok) {
+          showToast("🚀 正在切换主模型并重启中...");
+          setTimeout(() => {
+            window.location.reload();
+          }, 3000);
+        }
+      } catch (e) {
+        showToast("❌ 切换请求失败");
       }
     }
   };
 
   useEffect(() => {
     checkHealth();
-    const timer = setInterval(checkHealth, 30000); // 每30秒检查一次
+    const timer = setInterval(checkHealth, 30000);
     return () => clearInterval(timer);
   }, []);
 
   useEffect(() => {
-    // 检查 MCP 是否启用
     const checkMcpStatus = async () => {
       const enabled = await isMcpEnabled();
       setMcpEnabled(enabled);
-      console.log("[SideBar] MCP enabled:", enabled);
     };
     checkMcpStatus();
   }, []);
@@ -329,7 +400,43 @@ export function SideBar(props: { className?: string }) {
       {...props}
     >
       <SideBarHeader
-        title="Chat"
+        title={
+          <div
+            style={{
+              display: "flex",
+              alignItems: "baseline",
+              gap: "8px",
+            }}
+          >
+            <div
+              style={{ cursor: "pointer" }}
+              onClick={() => navigate(Path.Home)}
+            >
+              Chat
+            </div>
+            {isClawdbotSelected && !shouldNarrow && (
+              <div
+                onClick={() => setShowModelSelector(true)}
+                style={{
+                  cursor: "pointer",
+                  fontSize: "10px",
+                  color: "var(--primary)",
+                  border: "1px solid var(--primary)",
+                  borderRadius: "4px",
+                  padding: "1px 6px",
+                  display: "flex",
+                  alignItems: "center",
+                  lineHeight: "1.4",
+                  fontWeight: "bold",
+                  backgroundColor: "rgba(var(--primary-rgb), 0.15)",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {getModelName(backendModel || currentModel)}
+              </div>
+            )}
+          </div>
+        }
         subTitle="安总的 AI 助手"
         logo={<ChatGptIcon />}
         shouldNarrow={shouldNarrow}
@@ -386,6 +493,20 @@ export function SideBar(props: { className?: string }) {
             }}
           />
         )}
+        {showModelSelector && (
+          <Selector
+            defaultSelectedValue={backendModel}
+            items={MODEL_OPTIONS}
+            onClose={() => setShowModelSelector(false)}
+            onSelection={(s) => {
+              if (s.length === 0) return;
+              const model = s[0];
+              if (model !== backendModel) {
+                handleModelChange(model);
+              }
+            }}
+          />
+        )}
       </SideBarHeader>
       <SideBarBody
         onClick={(e) => {
@@ -413,14 +534,11 @@ export function SideBar(props: { className?: string }) {
               <IconButton
                 icon={<ConnectionIcon />}
                 onClick={() => {
-                  const url = adminUrl || (window as any).__CLAWDBOT_ADMIN_URL;
-                  if (url) {
-                    window.open(url, "_blank");
-                  } else {
-                    window.open("/api/setting", "_blank");
-                  }
+                  const adminPath = "https://api.enderfga.cn/";
+                  window.open(adminPath, "_blank");
+                  showToast("正在打开 Clawdbot 控制台...");
                 }}
-                title="打开 Clawdbot Web"
+                title="打开 Clawdbot 管理面板"
                 shadow
               />
             </div>
@@ -432,8 +550,20 @@ export function SideBar(props: { className?: string }) {
                 shadow
               />
             </div>
+            <div className={styles["sidebar-action"]}>
+              <IconButton
+                icon={<TerminalIcon />}
+                onClick={() => setShowTerminal(true)}
+                title="远程终端"
+                shadow
+              />
+            </div>
           </>
         }
+      />
+      <TerminalModal
+        isOpen={showTerminal}
+        onClose={() => setShowTerminal(false)}
       />
     </SideBarContainer>
   );

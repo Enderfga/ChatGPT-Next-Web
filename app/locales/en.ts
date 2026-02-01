@@ -90,6 +90,8 @@ const en: LocaleType = {
     Config: {
       Reset: "Reset to Default",
       SaveAs: "Save as Mask",
+      SessionId: "Session ID",
+      Copied: "Copied to clipboard",
     },
     IsContext: "Contextual Prompt",
     ShortcutKey: {

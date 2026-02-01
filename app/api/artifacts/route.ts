@@ -9,7 +9,17 @@ async function handle(req: NextRequest, res: NextResponse) {
   const storeHeaders = () => ({
     Authorization: `Bearer ${serverConfig.cloudflareKVApiKey}`,
   });
+
+  // POST 请求需要认证（防止未授权存储数据）
   if (req.method === "POST") {
+    const authHeader = req.headers.get("Authorization");
+    const expectedCode = process.env.CODE;
+    if (expectedCode) {
+      const token = authHeader?.replace("Bearer ", "");
+      if (token !== expectedCode) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+    }
     const clonedBody = await req.text();
     const hashedCode = md5.hash(clonedBody).trim();
     const body: {

@@ -21,6 +21,7 @@ import {
   Route,
   Routes,
   useLocation,
+  useNavigate,
 } from "react-router-dom";
 import { SideBar } from "./sidebar";
 import { useAppConfig } from "../store/config";
@@ -161,6 +162,8 @@ export function WindowContent(props: { children: React.ReactNode }) {
 function Screen() {
   const config = useAppConfig();
   const location = useLocation();
+  const navigate = useNavigate();
+  const accessStore = useAccessStore();
   const isArtifact = location.pathname.includes(Path.Artifacts);
   const isHome = location.pathname === Path.Home;
   const isAuth = location.pathname === Path.Auth;
@@ -174,6 +177,37 @@ function Screen() {
   useEffect(() => {
     loadAsyncGoogleFont();
   }, []);
+
+  // Redirect to auth page if not authorized and access control is enabled
+  useEffect(() => {
+    const verifyAccess = async () => {
+      if (isAuth || !accessStore.enabledAccessControl()) return;
+
+      // No code at all -> redirect
+      if (!accessStore.accessCode) {
+        navigate(Path.Auth);
+        return;
+      }
+
+      // Verify code with server
+      try {
+        const res = await fetch("/api/verify-code", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: accessStore.accessCode }),
+        });
+        const { valid } = await res.json();
+        if (!valid) {
+          // Invalid code -> clear and redirect
+          accessStore.update((s) => (s.accessCode = ""));
+          navigate(Path.Auth);
+        }
+      } catch {
+        // Network error -> allow (offline mode)
+      }
+    };
+    verifyAccess();
+  }, [isAuth, accessStore, navigate]);
 
   if (isArtifact) {
     return (

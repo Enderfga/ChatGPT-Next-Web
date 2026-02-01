@@ -4,7 +4,6 @@ import {
   REQUEST_TIMEOUT_MS,
 } from "@/app/constant";
 import { MultimodalContent, RequestMessage } from "@/app/client/api";
-import Locale from "@/app/locales";
 import {
   EventStreamContentType,
   fetchEventSource,
@@ -373,7 +372,11 @@ export function stream(
           } catch {}
 
           if (res.status === 401) {
-            responseTexts.push(Locale.Error.Unauthorized);
+            // 直接跳转到密码页面，不再显示冗长提示
+            if (typeof window !== "undefined") {
+              window.location.hash = "/auth";
+            }
+            responseTexts.push("🔐 需要访问密码，正在跳转...");
           }
 
           if (extraInfo) {
@@ -599,7 +602,11 @@ export function streamWithThink(
           } catch {}
 
           if (res.status === 401) {
-            responseTexts.push(Locale.Error.Unauthorized);
+            // 直接跳转到密码页面，不再显示冗长提示
+            if (typeof window !== "undefined") {
+              window.location.hash = "/auth";
+            }
+            responseTexts.push("🔐 需要访问密码，正在跳转...");
           }
 
           if (extraInfo) {

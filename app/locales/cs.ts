@@ -7,25 +7,8 @@ const isApp = !!getClientConfig()?.isApp;
 const cs: PartialLocaleType = {
   WIP: "V přípravě...",
   Error: {
-    Unauthorized: isApp
-      ? `😆 Rozhovor narazil na nějaké problémy, nebojte se:
-    \\ 2️⃣ Pokud chcete využít své vlastní zdroje OpenAI, klikněte [sem](/#/settings) a upravte nastavení ⚙️`
-      : `😆 Rozhovor narazil na nějaké problémy, nebojte se:
-    \ 2️⃣ Pokud používáte verzi soukromého nasazení, klikněte [sem](/#/auth) a zadejte přístupový klíč 🔑
-    \ 3️⃣ Pokud chcete využít své vlastní zdroje OpenAI, klikněte [sem](/#/settings) a upravte nastavení ⚙️
- `,
-  },
-  Auth: {
-    Title: "Potřebné heslo",
-    Tips: "Administrátor povolil ověření heslem, prosím zadejte přístupový kód níže",
-    SubTips: "nebo zadejte svůj OpenAI nebo Google API klíč",
-    Input: "Zadejte přístupový kód zde",
-    Confirm: "Potvrdit",
-    Later: "Později",
-    Return: "Návrat",
-    SaasTips: "Konfigurace je příliš složitá, chci okamžitě začít používat",
-    TopTips:
-      "🥳 Uvítací nabídka NextChat AI, okamžitě odemkněte OpenAI o1, GPT-4o, Claude-3.5 a nejnovější velké modely",
+    Unauthorized: `🔐 Tato stránka vyžaduje přístupový kód.
+👉 [Klikněte zde](/#/auth) pro zadání hesla`,
   },
   ChatItem: {
     ChatItemCount: (count: number) => `${count} konverzací`,

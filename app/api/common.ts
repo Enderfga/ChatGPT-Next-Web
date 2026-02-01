@@ -106,8 +106,8 @@ export async function requestOpenai(req: NextRequest) {
   const fetchUrl = cloudflareAIGatewayUrl(`${baseUrl}/${path}`);
   console.log("fetchUrl", fetchUrl);
 
-  // Get webchat session ID from request headers for push capability
-  const webchatSessionId = req.headers.get("x-webchat-session-id");
+  // Get session key from request headers for consistent session tracking
+  const webchatSessionId = req.headers.get("x-clawdbot-session-key");
 
   const fetchOptions: RequestInit = {
     headers: {
@@ -124,9 +124,9 @@ export async function requestOpenai(req: NextRequest) {
       ...(serverConfig.cfAccessClientSecret && {
         "CF-Access-Client-Secret": serverConfig.cfAccessClientSecret,
       }),
-      // Forward webchat session ID for push capability
+      // Forward session key for consistent session tracking
       ...(webchatSessionId && {
-        "x-webchat-session-id": webchatSessionId,
+        "x-clawdbot-session-key": webchatSessionId,
       }),
     },
     method: req.method,

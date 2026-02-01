@@ -125,6 +125,7 @@ import { isEmpty } from "lodash-es";
 import { getModelProvider } from "../utils/model";
 import { RealtimeChat } from "@/app/components/realtime-chat";
 import { VoiceInputButton } from "@/app/components/voice-input-button";
+import { AgentTerminal } from "./agent-terminal";
 import clsx from "clsx";
 import { getAvailableClientsCount, isMcpEnabled } from "../mcp/actions";
 
@@ -1740,7 +1741,7 @@ function _Chat() {
                 text={isMobileScreen ? "" : session.id.slice(0, 8) + "..."}
                 title={Locale.Chat.Config.SessionId + ": " + session.id}
                 onClick={() => {
-                  copyToClipboard(session.id);
+                  navigator.clipboard.writeText(session.id);
                   showToast(Locale.Chat.Config.Copied);
                 }}
               />
@@ -2071,6 +2072,7 @@ function _Chat() {
                   );
                 })}
             </div>
+            <AgentTerminal />
             <div className={styles["chat-input-panel"]}>
               <PromptHints
                 prompts={promptHints}

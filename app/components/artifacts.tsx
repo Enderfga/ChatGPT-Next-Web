@@ -19,6 +19,7 @@ import Locale from "../locales";
 import { Modal, showToast } from "./ui-lib";
 import { copyToClipboard, downloadAs } from "../utils";
 import { Path, ApiPath, REPO_URL } from "@/app/constant";
+import { useAccessStore } from "../store";
 import { Loading } from "./home";
 import styles from "./artifacts.module.scss";
 
@@ -120,6 +121,7 @@ export function ArtifactsShareButton({
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState(id);
   const [show, setShow] = useState(false);
+  const accessCode = useAccessStore((state) => state.accessCode);
   const shareUrl = useMemo(
     () => [location.origin, "#", Path.Artifacts, "/", name].join(""),
     [name],
@@ -130,6 +132,9 @@ export function ArtifactsShareButton({
       : fetch(ApiPath.Artifacts, {
           method: "POST",
           body: code,
+          headers: {
+            Authorization: `Bearer ${accessCode}`,
+          },
         })
           .then((res) => res.json())
           .then(({ id }) => {

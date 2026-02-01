@@ -7,25 +7,8 @@ const isApp = !!getClientConfig()?.isApp;
 const tr: PartialLocaleType = {
   WIP: "Çalışma devam ediyor...",
   Error: {
-    Unauthorized: isApp
-      ? `😆 Sohbet bazı sorunlarla karşılaştı, endişelenmeyin:
-    \\ 2️⃣ Kendi OpenAI kaynaklarınızı kullanmak istiyorsanız, [buraya tıklayarak](/#/settings) ayarları değiştirin ⚙️`
-      : `😆 Sohbet bazı sorunlarla karşılaştı, endişelenmeyin:
-    \ 2️⃣ Eğer özel dağıtım sürümü kullanıyorsanız, [buraya tıklayarak](/#/auth) erişim anahtarını girin 🔑
-    \ 3️⃣ Kendi OpenAI kaynaklarınızı kullanmak istiyorsanız, [buraya tıklayarak](/#/settings) ayarları değiştirin ⚙️
- `,
-  },
-  Auth: {
-    Title: "Şifre Gerekli",
-    Tips: "Yönetici şifre doğrulamasını etkinleştirdi, lütfen aşağıya erişim kodunu girin",
-    SubTips: "Veya OpenAI veya Google API anahtarınızı girin",
-    Input: "Erişim kodunu buraya girin",
-    Confirm: "Onayla",
-    Later: "Sonra",
-    Return: "Geri",
-    SaasTips: "Ayarlar çok karmaşık, hemen kullanmak istiyorum",
-    TopTips:
-      "🥳 NextChat AI lansman teklifi, OpenAI o1, GPT-4o, Claude-3.5 ve en son büyük modelleri şimdi açın",
+    Unauthorized: `🔐 Bu site bir erişim kodu gerektiriyor.
+👉 [Buraya tıklayın](/#/auth) şifrenizi girmek için`,
   },
   ChatItem: {
     ChatItemCount: (count: number) => `${count} konuşma`,

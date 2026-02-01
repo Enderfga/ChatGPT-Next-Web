@@ -28,6 +28,7 @@ const redis = new Redis({
 
 // Redis key 前缀
 const QUEUE_PREFIX = "push:queue:";
+const AGENT_STATUS_KEY = "agent:status";
 const QUEUE_TTL = 5 * 60; // 5 分钟过期
 
 // GET: 轮询获取消息
@@ -73,6 +74,17 @@ export async function GET(req: NextRequest) {
 
 // POST: 推送消息到指定 session
 export async function POST(req: NextRequest) {
+  // 验证认证 - 需要 Bearer token 或 CODE 环境变量匹配
+  const authHeader = req.headers.get("Authorization");
+  const expectedCode = process.env.CODE;
+
+  if (expectedCode) {
+    const token = authHeader?.replace("Bearer ", "");
+    if (token !== expectedCode) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+  }
+
   try {
     const body = await req.json();
     const { sessionId, type, content, role, metadata } = body;

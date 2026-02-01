@@ -1,0 +1,170 @@
+.terminal {
+  margin: 10px 20px;
+  background: #1a1a2e;
+  border-radius: 8px;
+  font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+  font-size: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  animation: slideIn 0.2s ease-out;
+
+  &.compact {
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+
+    &:hover {
+      opacity: 1;
+    }
+
+    .header {
+      padding: 6px 12px;
+    }
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #16213e;
+  border-bottom: 1px solid #0f3460;
+}
+
+.title {
+  color: #e94560;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.status {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  text-transform: uppercase;
+
+  &.idle {
+    background: #333;
+    color: #888;
+  }
+
+  &.thinking {
+    background: #1e3a5f;
+    color: #5dade2;
+    animation: pulse 1.5s infinite;
+  }
+
+  &.working {
+    background: #4a1942;
+    color: #bb8fce;
+    animation: pulse 1s infinite;
+  }
+
+  &.waiting {
+    background: #5d4037;
+    color: #ffb74d;
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.history {
+  max-height: 150px;
+  overflow-y: auto;
+  padding: 8px 12px;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #0f3460;
+    border-radius: 2px;
+  }
+}
+
+.line {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 4px;
+  color: #a0a0a0;
+  line-height: 1.4;
+
+  &.active {
+    color: #00ff88;
+  }
+}
+
+.prompt {
+  color: #e94560;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+.tool {
+  color: #5dade2;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.input {
+  color: inherit;
+  word-break: break-all;
+  flex: 1;
+}
+
+.cursor {
+  animation: blink 0.8s infinite;
+  margin-left: 2px;
+}
+
+@keyframes blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.footer {
+  padding: 6px 12px;
+  background: #0f3460;
+  color: #7f8c8d;
+  font-size: 11px;
+  border-top: 1px solid #16213e;
+}
+
+.empty {
+  color: #555;
+  font-style: italic;
+  padding: 4px 0;
+}

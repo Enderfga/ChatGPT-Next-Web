@@ -7,26 +7,8 @@ const isApp = !!getClientConfig()?.isApp;
 const fr: PartialLocaleType = {
   WIP: "Prochainement...",
   Error: {
-    Unauthorized: isApp
-      ? `😆 La conversation a rencontré quelques problèmes, pas de panique :
-    \\ 2️⃣ Si vous souhaitez utiliser vos propres ressources OpenAI, cliquez [ici](/#/settings) pour modifier les paramètres ⚙️`
-      : `😆 La conversation a rencontré quelques problèmes, pas de panique :
-    \ 2️⃣ Si vous utilisez une version déployée privée, cliquez [ici](/#/auth) pour entrer la clé d'accès 🔑
-    \ 3️⃣ Si vous souhaitez utiliser vos propres ressources OpenAI, cliquez [ici](/#/settings) pour modifier les paramètres ⚙️
- `,
-  },
-  Auth: {
-    Title: "Mot de passe requis",
-    Tips: "L'administrateur a activé la vérification par mot de passe. Veuillez entrer le code d'accès ci-dessous",
-    SubTips: "Ou entrez votre clé API OpenAI ou Google",
-    Input: "Entrez le code d'accès ici",
-    Confirm: "Confirmer",
-    Later: "Plus tard",
-    Return: "Retour",
-    SaasTips:
-      "La configuration est trop compliquée, je veux l'utiliser immédiatement",
-    TopTips:
-      "🥳 Offre de lancement NextChat AI, débloquez OpenAI o1, GPT-4o, Claude-3.5 et les derniers grands modèles",
+    Unauthorized: `🔐 Ce site nécessite un code d'accès.
+👉 [Cliquez ici](/#/auth) pour entrer votre mot de passe`,
   },
   ChatItem: {
     ChatItemCount: (count: number) => `${count} conversations`,

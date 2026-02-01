@@ -1,54 +1,172 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// 安总的配置信息 - 备份/默认值
-const DEFAULT_CF_ID = "8645ad22534951ab211fb96a08063d30.access";
-const DEFAULT_CF_SECRET =
-  "2cd9e228c0d906169a0dd7c83f22347aed6eb7fb9d1714db12c588a3e4411544";
-
 async function handle(req: NextRequest) {
   const adminUrl = process.env.CLAWDBOT_ADMIN_URL || "https://api.enderfga.cn";
-  const healthUrl = `${adminUrl}/health`;
+  const gatewayApiUrl = `${adminUrl}/gateway-api`;
+  const doctorApiUrl = `${adminUrl}/sasha-doctor`;
 
-  const cfId =
-    process.env.CF_ACCESS_CLIENT_ID ||
-    "8645ad22534951ab211fb96a08063d30.access";
-  const cfSecret =
-    process.env.CF_ACCESS_CLIENT_SECRET ||
-    "2cd9e228c0d906169a0dd7c83f22347aed6eb7fb9d1714db12c588a3e4411544";
+  const cfId = process.env.CF_ACCESS_CLIENT_ID;
+  const cfSecret = process.env.CF_ACCESS_CLIENT_SECRET;
+
+  if (!cfId || !cfSecret) {
+    return NextResponse.json(
+      { status: "error", message: "CF Access credentials not configured" },
+      { status: 500 },
+    );
+  }
+
+  const authToken = process.env.CODE || "";
+  const headers = {
+    "CF-Access-Client-Id": cfId,
+    "CF-Access-Client-Secret": cfSecret,
+    Authorization: `Bearer ${authToken}`,
+  };
 
   try {
-    // 如果是 POST 请求，执行重启
+    // POST: Handle various actions
     if (req.method === "POST") {
-      const { action } = await req.json();
-      if (action === "restart") {
-        await fetch(`${adminUrl}/api/gateway?action=restart`, {
+      const body = await req.json();
+      const { action, model } = body;
+
+      // Action: switch-model - Update default model via sasha-doctor and restart
+      if (action === "switch-model") {
+        console.log("[Health] Switching main model to:", model);
+
+        const switchRes = await fetch(`${doctorApiUrl}/switch-model`, {
           method: "POST",
-          headers: {
-            "CF-Access-Client-Id": cfId,
-            "CF-Access-Client-Secret": cfSecret,
-          },
+          headers: { ...headers, "Content-Type": "application/json" },
+          body: JSON.stringify({ model }),
         });
-        return NextResponse.json({ status: "restarting" });
+
+        if (switchRes.ok) {
+          const data = await switchRes.json();
+          return NextResponse.json({
+            status: "switched",
+            old_model: data.old_model,
+            new_model: data.new_model,
+            message: data.message,
+          });
+        } else {
+          const error = await switchRes.text();
+          return NextResponse.json(
+            { status: "error", message: error },
+            { status: 500 },
+          );
+        }
+      }
+
+      // Action: restart - Simple restart (original behavior)
+      if (action === "restart") {
+        const restartRes = await fetch(`${gatewayApiUrl}/restart`, {
+          method: "POST",
+          headers,
+        });
+
+        if (restartRes.ok) {
+          const data = await restartRes.json();
+          console.log("[Health] Restart success:", data);
+          return NextResponse.json({
+            status: "restarting",
+            message: data.message || "Gateway restarting...",
+          });
+        } else {
+          const error = await restartRes.text();
+          console.error("[Health] Restart failed:", error);
+          return NextResponse.json(
+            { status: "error", message: error },
+            { status: 500 },
+          );
+        }
+      }
+
+      // Action: restart-smart - Smart restart with doctor fallback
+      if (action === "restart-smart") {
+        console.log("[Health] Smart restart requested...");
+        const smartRes = await fetch(`${doctorApiUrl}/restart-smart`, {
+          method: "POST",
+          headers,
+        });
+
+        if (smartRes.ok) {
+          const data = await smartRes.json();
+          console.log("[Health] Smart restart result:", data);
+          return NextResponse.json({
+            status: data.ok ? "restarted" : "error",
+            message: data.message,
+            steps: data.steps,
+          });
+        } else {
+          const error = await smartRes.text();
+          console.error("[Health] Smart restart failed:", error);
+          return NextResponse.json(
+            { status: "error", message: error },
+            { status: 500 },
+          );
+        }
+      }
+
+      // Action: doctor - Run clawdbot doctor --fix only
+      if (action === "doctor") {
+        console.log("[Health] Doctor requested...");
+        const doctorRes = await fetch(`${doctorApiUrl}/doctor`, {
+          method: "POST",
+          headers,
+        });
+
+        if (doctorRes.ok) {
+          const data = await doctorRes.json();
+          console.log("[Health] Doctor result:", data);
+          return NextResponse.json({
+            status: data.ok ? "fixed" : "error",
+            output: data.output,
+            stderr: data.stderr,
+          });
+        } else {
+          const error = await doctorRes.text();
+          console.error("[Health] Doctor failed:", error);
+          return NextResponse.json(
+            { status: "error", message: error },
+            { status: 500 },
+          );
+        }
       }
     }
 
-    // 执行健康检查
-    const res = await fetch(healthUrl, {
-      headers: {
-        "CF-Access-Client-Id": cfId,
-        "CF-Access-Client-Secret": cfSecret,
-      },
+    // GET: Health check - 直接从 sasha-doctor 获取完整状态
+    const res = await fetch(`${doctorApiUrl}/gateway-status`, {
+      headers,
       cache: "no-store",
-      next: { revalidate: 0 },
     });
 
-    // 只要能访问到（不管是 200 还是 Cloudflare 的拦截码），都说明隧道是通的
-    if (res.status < 500) {
+    if (res.ok) {
+      const status = await res.json();
       return NextResponse.json({
-        status: "online",
+        status: status.ok ? "online" : "degraded",
         adminUrl,
-        statusCode: res.status,
+        model: status.model || status.config?.default_model,
+        whatsappLinked: status.channels?.whatsapp?.linked ?? false,
+        whatsappConnected: status.channels?.whatsapp?.connected ?? false,
+        sessionCount: status.sessions?.count ?? 0,
       });
+    }
+
+    // Fallback: 尝试获取模型配置，但标记为 degraded（能读配置 ≠ gateway 在运行）
+    try {
+      const configRes = await fetch(`${doctorApiUrl}/get-config`, {
+        headers,
+        cache: "no-store",
+      });
+      if (configRes.ok) {
+        const configData = await configRes.json();
+        return NextResponse.json({
+          status: "degraded", // 不是 online！gateway 状态未知
+          adminUrl,
+          model: configData.default_model || "",
+          note: "Gateway status unavailable, config retrieved",
+        });
+      }
+    } catch (e) {
+      console.error("[Health] Failed to get config from sasha-doctor", e);
     }
 
     return NextResponse.json({ status: "offline" }, { status: 503 });

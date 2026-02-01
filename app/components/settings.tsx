@@ -1842,7 +1842,15 @@ export function Settings() {
               <IconButton
                 icon={<RobotIcon />}
                 text={Locale.Settings.Access.Clawdbot.GoToSasha}
-                onClick={() => window.open("https://clawd.bot", "_blank")}
+                onClick={() => {
+                  const adminUrl = "https://api.enderfga.cn";
+                  // Try direct navigation first
+                  window.location.href = `${adminUrl}/index.html`;
+                  // Fallback to open in new tab if needed
+                  setTimeout(() => {
+                    window.open(`${adminUrl}/index.html`, "_blank");
+                  }, 500);
+                }}
               />
             </div>
           </ListItem>

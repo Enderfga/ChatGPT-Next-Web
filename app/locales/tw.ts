@@ -1,18 +1,9 @@
-import { getClientConfig } from "../config/client";
 import { SubmitKey } from "../store/config";
-
-const isApp = !!getClientConfig()?.isApp;
 
 const tw = {
   WIP: "此功能仍在開發中……",
   Error: {
-    Unauthorized: isApp
-      ? `😆 對話遇到了一些問題，不用慌:
-    \\ 2️⃣ 如果你想消耗自己的 OpenAI 資源，點選[這裡](/#/settings)修改設定 ⚙️`
-      : `😆 對話遇到了一些問題，不用慌:
-    \ 2️⃣ 如果你正在使用私有部署版本，點選[這裡](/#/auth)輸入存取金鑰 🔑
-    \ 3️⃣ 如果你想消耗自己的 OpenAI 資源，點選[這裡](/#/settings)修改設定 ⚙️
- `,
+    Unauthorized: `🔐 此網站需要存取密碼\n👉 [點擊這裡](/#/auth) 輸入密碼`,
   },
 
   Auth: {

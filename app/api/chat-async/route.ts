@@ -29,6 +29,16 @@ function cleanupStaleRequests() {
 
 // POST: 提交聊天请求（立即返回，后台处理）
 export async function POST(req: NextRequest) {
+  // 认证检查
+  const authHeader = req.headers.get("Authorization");
+  const expectedCode = process.env.CODE;
+  if (expectedCode) {
+    const token = authHeader?.replace("Bearer ", "");
+    if (token !== expectedCode) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+  }
+
   try {
     const body = await req.json();
     const { sessionId, messages, model, stream } = body;

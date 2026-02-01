@@ -7,23 +7,8 @@ const isApp = !!getClientConfig()?.isApp;
 const da: PartialLocaleType = {
   WIP: "Der kommer snart mere...",
   Error: {
-    Unauthorized: isApp
-      ? `Hov, der skete en fejl. Sådan kan du komme videre:
-       \\ 2️⃣ Vil du bruge dine egne OpenAI-nøgler? [Tryk her](/#/settings) for at ændre indstillinger ⚙️`
-      : `Hov, der skete en fejl. Lad os løse det:
-       \\ 2️⃣ Bruger du en privat opsætning? [Tryk her](/#/auth) for at taste din nøgle 🔑
-       \\ 3️⃣ Vil du bruge dine egne OpenAI-nøgler? [Tryk her](/#/settings) for at ændre indstillinger ⚙️
-       `,
-  },
-  Auth: {
-    Return: "Tilbage",
-    Title: "Adgangskode",
-    Tips: "Skriv venligst koden herunder",
-    SubTips: "Eller brug din egen OpenAI- eller Google-nøgle",
-    Input: "Adgangskode",
-    Confirm: "OK",
-    Later: "Senere",
-    SaasTips: "Hvis det er for svært, kan du starte nu",
+    Unauthorized: `🔐 Denne side kræver en adgangskode.
+👉 [Klik her](/#/auth) for at indtaste adgangskoden`,
   },
   ChatItem: {
     ChatItemCount: (count: number) => `${count} beskeder`,

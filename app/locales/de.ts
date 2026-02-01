@@ -7,26 +7,8 @@ const isApp = !!getClientConfig()?.isApp;
 const de: PartialLocaleType = {
   WIP: "In Bearbeitung...",
   Error: {
-    Unauthorized: isApp
-      ? `😆 Das Gespräch hatte einige Probleme, keine Sorge:
-    \\ 2️⃣ Wenn du deine eigenen OpenAI-Ressourcen verwenden möchtest, klicke [hier](/#/settings), um die Einstellungen zu ändern ⚙️`
-      : `😆 Das Gespräch hatte einige Probleme, keine Sorge:
-    \ 2️⃣ Wenn du eine private Bereitstellung verwendest, klicke [hier](/#/auth), um den Zugriffsschlüssel einzugeben 🔑
-    \ 3️⃣ Wenn du deine eigenen OpenAI-Ressourcen verwenden möchtest, klicke [hier](/#/settings), um die Einstellungen zu ändern ⚙️
- `,
-  },
-  Auth: {
-    Title: "Passwort erforderlich",
-    Tips: "Der Administrator hat die Passwortüberprüfung aktiviert. Bitte geben Sie den Zugangscode unten ein.",
-    SubTips: "Oder geben Sie Ihren OpenAI oder Google API-Schlüssel ein.",
-    Input: "Geben Sie hier den Zugangscode ein",
-    Confirm: "Bestätigen",
-    Later: "Später",
-    Return: "Zurück",
-    SaasTips:
-      "Die Konfiguration ist zu kompliziert, ich möchte es sofort nutzen",
-    TopTips:
-      "🥳 NextChat AI Einführungsangebot, schalte jetzt OpenAI o1, GPT-4o, Claude-3.5 und die neuesten großen Modelle frei",
+    Unauthorized: `🔐 Diese Seite erfordert einen Zugangscode.
+👉 [Hier klicken](/#/auth) um das Passwort einzugeben`,
   },
   ChatItem: {
     ChatItemCount: (count: number) => `${count} Gespräche`,

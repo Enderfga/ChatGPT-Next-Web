@@ -7,25 +7,8 @@ const isApp = !!getClientConfig()?.isApp;
 const id: PartialLocaleType = {
   WIP: "Coming Soon...",
   Error: {
-    Unauthorized: isApp
-      ? `😆 Percakapan mengalami beberapa masalah, tidak perlu khawatir:
-   \\ 2️⃣ Jika Anda ingin menggunakan sumber daya OpenAI Anda sendiri, klik [di sini](/#/settings) untuk mengubah pengaturan ⚙️`
-      : `😆 Percakapan mengalami beberapa masalah, tidak perlu khawatir:
-   \ 2️⃣ Jika Anda menggunakan versi penyebaran pribadi, klik [di sini](/#/auth) untuk memasukkan kunci akses 🔑
-   \ 3️⃣ Jika Anda ingin menggunakan sumber daya OpenAI Anda sendiri, klik [di sini](/#/settings) untuk mengubah pengaturan ⚙️
-`,
-  },
-  Auth: {
-    Title: "Kebutuhan Kata Sandi",
-    Tips: "Administrator telah mengaktifkan verifikasi kata sandi, silakan masukkan kode akses di bawah ini",
-    SubTips: "Atau masukkan kunci API OpenAI atau Google Anda",
-    Input: "Masukkan kode akses di sini",
-    Confirm: "Konfirmasi",
-    Later: "Nanti",
-    Return: "Kembali",
-    SaasTips: "Konfigurasi terlalu rumit, saya ingin menggunakannya segera",
-    TopTips:
-      "🥳 Penawaran Peluncuran NextChat AI, buka OpenAI o1, GPT-4o, Claude-3.5 dan model besar terbaru sekarang",
+    Unauthorized: `🔐 Situs ini memerlukan kode akses.
+👉 [Klik di sini](/#/auth) untuk memasukkan kata sandi`,
   },
   ChatItem: {
     ChatItemCount: (count: number) => `${count} percakapan`,
