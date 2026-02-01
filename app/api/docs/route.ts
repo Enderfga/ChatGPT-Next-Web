@@ -1,19 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const SASHA_DOCTOR_URL =
-  process.env.SASHA_DOCTOR_URL || "http://127.0.0.1:18795";
-
 export async function GET(req: NextRequest) {
+  // 通过 Cloudflare Tunnel 访问 sasha-doctor
+  const adminUrl = process.env.CLAWDBOT_ADMIN_URL || "https://api.enderfga.cn";
+  const docsUrl = `${adminUrl}/sasha-doctor/docs`;
+
   try {
-    // 从 sasha-doctor 获取文档内容
-    const res = await fetch(`${SASHA_DOCTOR_URL}/sasha-doctor/docs`, {
+    console.log("[Docs API] Fetching from:", docsUrl);
+    const res = await fetch(docsUrl, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
+      // 不缓存，确保获取最新内容
+      cache: "no-store",
     });
 
     if (!res.ok) {
+      console.error("[Docs API] Response not ok:", res.status);
       return NextResponse.json(
-        { error: "Failed to fetch docs" },
+        { error: `Failed to fetch docs: ${res.status}` },
         { status: res.status },
       );
     }
