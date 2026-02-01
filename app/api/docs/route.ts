@@ -9,7 +9,11 @@ export async function GET(req: NextRequest) {
 
   if (!cfId || !cfSecret) {
     return NextResponse.json(
-      { error: "CF Access credentials not configured" },
+      {
+        error: "CF Access credentials not configured",
+        cfId: !!cfId,
+        cfSecret: !!cfSecret,
+      },
       { status: 500 },
     );
   }
@@ -26,20 +30,33 @@ export async function GET(req: NextRequest) {
       cache: "no-store",
     });
 
+    console.log("[Docs API] Response status:", res.status);
+
     if (!res.ok) {
-      console.error("[Docs API] Response not ok:", res.status);
+      const text = await res.text();
+      console.error(
+        "[Docs API] Response not ok:",
+        res.status,
+        text.substring(0, 200),
+      );
       return NextResponse.json(
-        { error: `Failed to fetch docs: ${res.status}` },
+        {
+          error: `Failed to fetch docs: ${res.status}`,
+          body: text.substring(0, 100),
+        },
         { status: res.status },
       );
     }
 
     const data = await res.json();
     return NextResponse.json(data);
-  } catch (error) {
-    console.error("[Docs API] Error:", error);
+  } catch (error: any) {
+    console.error("[Docs API] Error:", error.message || error);
     return NextResponse.json(
-      { error: "Failed to connect to sasha-doctor" },
+      {
+        error: "Failed to connect to sasha-doctor",
+        detail: error.message || String(error),
+      },
       { status: 500 },
     );
   }
