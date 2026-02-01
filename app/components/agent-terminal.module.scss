@@ -41,6 +41,29 @@
   padding: 8px 12px;
   background: #16213e;
   border-bottom: 1px solid #0f3460;
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    background: #1a2a4e;
+  }
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.arrow {
+  color: #888;
+  font-size: 10px;
 }
 
 .title {
@@ -49,6 +72,17 @@
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 1px;
+}
+
+.copyBtn {
+  cursor: pointer;
+  font-size: 12px;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 1;
+  }
 }
 
 .status {
@@ -94,6 +128,8 @@
   max-height: 150px;
   overflow-y: auto;
   padding: 8px 12px;
+  user-select: text;
+  cursor: text;
 
   &::-webkit-scrollbar {
     width: 4px;

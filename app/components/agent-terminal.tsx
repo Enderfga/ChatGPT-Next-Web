@@ -1,5 +1,6 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import styles from "./agent-terminal.module.scss";
+import { copyToClipboard } from "../utils";
 
 interface ToolCall {
   tool: string;
@@ -112,6 +113,15 @@ export function AgentTerminal() {
     }
   };
 
+  const copyHistory = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      const text = history.map((h) => `[${h.tool}] ${h.input}`).join("\n");
+      copyToClipboard(text);
+    },
+    [history],
+  );
+
   // Auto-scroll history
   useEffect(() => {
     if (historyRef.current) {
@@ -189,10 +199,24 @@ export function AgentTerminal() {
   return (
     <div className={styles.terminal}>
       <div className={styles.header} onClick={toggleExpand}>
-        <span className={styles.title}>Sasha Agent</span>
-        <span className={`${styles.status} ${styles[status.state]}`}>
-          {getStateLabel(status.state)}
-        </span>
+        <div className={styles.headerLeft}>
+          <span className={styles.arrow}>{expanded ? "▼" : "▶"}</span>
+          <span className={styles.title}>Sasha Agent</span>
+        </div>
+        <div className={styles.headerRight}>
+          {expanded && history.length > 0 && (
+            <span
+              className={styles.copyBtn}
+              onClick={copyHistory}
+              title="Copy history"
+            >
+              📋
+            </span>
+          )}
+          <span className={`${styles.status} ${styles[status.state]}`}>
+            {getStateLabel(status.state)}
+          </span>
+        </div>
       </div>
 
       {expanded && (
