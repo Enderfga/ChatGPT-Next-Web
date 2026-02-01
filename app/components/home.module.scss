@@ -69,7 +69,13 @@
     margin-bottom: 20px;
 
     .sidebar-bar-button {
-      flex-grow: 1;
+      flex-grow: 0;
+      width: 50px;
+      height: 50px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
 
       &:not(:last-child) {
         margin-right: 10px;
@@ -267,8 +273,12 @@
 
   .sidebar-header-bar {
     flex-direction: column;
+    align-items: center;
 
     .sidebar-bar-button {
+      width: 50px;
+      height: 50px;
+      
       &:not(:last-child) {
         margin-right: 0;
         margin-bottom: 10px;
