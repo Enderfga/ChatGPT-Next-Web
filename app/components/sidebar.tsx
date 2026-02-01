@@ -479,7 +479,7 @@ export function SideBar(props: { className?: string }) {
         <div className={styles["sidebar-header-bar"]}>
           <IconButton
             icon={<AddIcon />}
-            text={shouldNarrow ? undefined : Locale.Home.NewChat}
+            title="新聊天"
             className={styles["sidebar-bar-button"]}
             onClick={() => {
               if (config.dontShowMaskSplashScreen) {
@@ -494,21 +494,21 @@ export function SideBar(props: { className?: string }) {
           <Link to={Path.Settings}>
             <IconButton
               icon={<SettingsIcon />}
-              text={shouldNarrow ? undefined : Locale.Settings.Title}
+              title="设置"
               className={styles["sidebar-bar-button"]}
               shadow
             />
           </Link>
           <IconButton
             icon={<BookIcon />}
-            text={shouldNarrow ? undefined : "文档"}
+            title="文档"
             className={styles["sidebar-bar-button"]}
             onClick={() => window.open("/docs", "_blank")}
             shadow
           />
           <IconButton
             icon={<TerminalIcon />}
-            text={shouldNarrow ? undefined : "终端"}
+            title="终端"
             className={styles["sidebar-bar-button"]}
             onClick={() => setShowTerminal(true)}
             shadow
