@@ -212,6 +212,37 @@ export function SideBarBody(props: {
   );
 }
 
+function CommitBadge() {
+  const commitSha = process.env.COMMIT_SHA || "dev";
+  const repo = process.env.GITHUB_REPO || "Enderfga/ChatGPT-Next-Web";
+  const shortSha = commitSha.slice(0, 7);
+  const commitUrl = `https://github.com/${repo}/commit/${commitSha}`;
+
+  return (
+    <a
+      href={commitUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={`Commit: ${commitSha}`}
+      style={{
+        fontSize: "10px",
+        color: "#666",
+        textDecoration: "none",
+        fontFamily: "monospace",
+        padding: "2px 6px",
+        background: "rgba(255,255,255,0.05)",
+        borderRadius: "4px",
+        marginLeft: "8px",
+        alignSelf: "center",
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.color = "#999")}
+      onMouseLeave={(e) => (e.currentTarget.style.color = "#666")}
+    >
+      {shortSha}
+    </a>
+  );
+}
+
 export function SideBarTail(props: {
   primaryAction?: React.ReactNode;
   secondaryAction?: React.ReactNode;
@@ -256,6 +287,7 @@ export function SideBarTail(props: {
             alignSelf: "center",
           }}
         />
+        <CommitBadge />
       </div>
     </div>
   );

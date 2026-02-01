@@ -6,8 +6,26 @@ console.log("[Next] build mode", mode);
 const disableChunk = !!process.env.DISABLE_CHUNK || mode === "export";
 console.log("[Next] build with chunk: ", !disableChunk);
 
+// Git commit hash for version display
+const commitHash = process.env.VERCEL_GIT_COMMIT_SHA ||
+  process.env.GIT_COMMIT_SHA ||
+  (() => {
+    try {
+      return require("child_process")
+        .execSync("git rev-parse HEAD")
+        .toString()
+        .trim();
+    } catch {
+      return "unknown";
+    }
+  })();
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  env: {
+    COMMIT_SHA: commitHash,
+    GITHUB_REPO: "Enderfga/ChatGPT-Next-Web",
+  },
   webpack(config) {
     config.module.rules.push({
       test: /\.svg$/,
