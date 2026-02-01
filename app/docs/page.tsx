@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeHighlight from "rehype-highlight";
 import styles from "./docs.module.scss";
+import "highlight.js/styles/github-dark.css";
 
 export default function DocsPage() {
   const [content, setContent] = useState<string>("");
@@ -30,7 +32,9 @@ export default function DocsPage() {
   if (loading) {
     return (
       <div className={styles.container}>
-        <div className={styles.loading}>加载中...</div>
+        <div className={styles.inner}>
+          <div className={styles.loading}>📖 正在加载文档...</div>
+        </div>
       </div>
     );
   }
@@ -38,21 +42,30 @@ export default function DocsPage() {
   if (error) {
     return (
       <div className={styles.container}>
-        <div className={styles.error}>错误: {error}</div>
+        <div className={styles.inner}>
+          <div className={styles.error}>❌ 加载失败: {error}</div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className={styles.container}>
-      <div className={styles.header}>
-        <h1>📚 莎莎大人的工具箱</h1>
-        <a href="/" className={styles.backButton}>
-          ← 返回聊天
-        </a>
-      </div>
-      <div className={styles.content}>
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+      <div className={styles.inner}>
+        <div className={styles.header}>
+          <h1>📚 莎莎大人的工具箱</h1>
+          <a href="/" className={styles.backButton}>
+            ← 返回聊天
+          </a>
+        </div>
+        <div className={styles.content}>
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            rehypePlugins={[rehypeHighlight]}
+          >
+            {content}
+          </ReactMarkdown>
+        </div>
       </div>
     </div>
   );
