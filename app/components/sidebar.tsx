@@ -506,6 +506,13 @@ export function SideBar(props: { className?: string }) {
             onClick={() => window.open("/docs", "_blank")}
             shadow
           />
+          <IconButton
+            icon={<TerminalIcon />}
+            text={shouldNarrow ? undefined : "终端"}
+            className={styles["sidebar-bar-button"]}
+            onClick={() => setShowTerminal(true)}
+            shadow
+          />
         </div>
         {showModelSelector && (
           <Selector
@@ -552,14 +559,6 @@ export function SideBar(props: { className?: string }) {
                 icon={<ReloadIcon />}
                 onClick={handleRestart}
                 title="重启 Gateway"
-                shadow
-              />
-            </div>
-            <div className={styles["sidebar-action"]}>
-              <IconButton
-                icon={<TerminalIcon />}
-                onClick={() => setShowTerminal(true)}
-                title="远程终端"
                 shadow
               />
             </div>
