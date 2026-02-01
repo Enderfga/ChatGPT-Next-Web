@@ -625,21 +625,22 @@ export const useChatStore = createPersistStore(
         const mcpSystemPrompt = mcpEnabled ? await getMcpSystemPrompt() : "";
 
         // Push capability prompt - allows AI to proactively send messages
+        // Note: Keep this minimal to avoid AI overusing push
         const pushCapabilityPrompt = `
 
 [Push Capability]
-You can proactively push messages to this webchat session. Use this when you need to:
-- Send a "please wait" message before doing something that takes time
-- Split your response into multiple messages
-- Send follow-up messages after completing background tasks
+You can push async messages to this session using the async-task skill.
+Current session ID: ${session.id}
 
-To push a message, use:
-curl -X POST https://gpt.enderfga.cn/api/push \\
-  -H "Content-Type: application/json" \\
-  -d '{"sessionId": "${session.id}", "content": "your message here", "role": "assistant"}'
+Usage:
+- async-task start "task description" - Mark task as started
+- async-task done "result" - Push result when done
+- async-task push "message" - Push a single message
 
-Current webchat session ID: ${session.id}
-You can use this capability multiple times in a single conversation.
+IMPORTANT:
+- Only push ONCE per task completion. Do NOT loop or retry.
+- If push succeeds, you're done. Move on.
+- Do NOT use raw curl commands - use async-task skill instead.
 `;
 
         var systemPrompts: ChatMessage[] = [];
