@@ -8,12 +8,23 @@ interface ToolCall {
   timestamp: number;
 }
 
+// Tool details can have various shapes depending on the tool
+interface ToolDetails {
+  command?: string; // For exec/Bash
+  file_path?: string; // For Read/Write/Edit
+  path?: string; // Alternative path field
+  pattern?: string; // For Glob/Grep
+  query?: string; // For search operations
+  url?: string; // For web fetch
+  [key: string]: unknown; // Allow other tool-specific fields
+}
+
 interface AgentStatus {
   ok: boolean;
   state: "idle" | "thinking" | "working" | "waiting";
   activity?: string;
   currentTool?: string;
-  details?: any;
+  details?: ToolDetails | null;
   timestamp?: number;
 }
 
@@ -29,6 +40,7 @@ export function AgentTerminal() {
     let pollTimer: NodeJS.Timeout;
     let lastTool = "";
     let lastInput = "";
+    let currentState: string = "idle";
 
     const poll = async () => {
       try {
@@ -38,6 +50,7 @@ export function AgentTerminal() {
         if (res.ok) {
           const data: AgentStatus = await res.json();
           setStatus(data);
+          currentState = data.state;
 
           // Auto-expand logic:
           // 1. If agent starts working/thinking and user hasn't explicitly CLOSED it
@@ -88,7 +101,10 @@ export function AgentTerminal() {
       } catch (e) {
         // Silent fail
       }
-      pollTimer = setTimeout(poll, 500);
+
+      // Dynamic polling interval: 500ms when working, 3000ms when idle
+      const interval = currentState === "idle" ? 3000 : 500;
+      pollTimer = setTimeout(poll, interval);
     };
 
     poll();
@@ -129,15 +145,15 @@ export function AgentTerminal() {
     }
   }, [history, expanded]);
 
-  const formatInput = (details: any): string => {
+  const formatInput = (details: ToolDetails | null | undefined): string => {
     if (!details) return "";
     if (typeof details === "string") return details;
-    if (details.command) return details.command;
-    if (details.file_path) return details.file_path;
-    if (details.path) return details.path;
-    if (details.pattern) return details.pattern;
-    if (details.query) return details.query;
-    if (details.url) return details.url;
+    if (details.command) return String(details.command);
+    if (details.file_path) return String(details.file_path);
+    if (details.path) return String(details.path);
+    if (details.pattern) return String(details.pattern);
+    if (details.query) return String(details.query);
+    if (details.url) return String(details.url);
     try {
       return JSON.stringify(details).slice(0, 150);
     } catch {

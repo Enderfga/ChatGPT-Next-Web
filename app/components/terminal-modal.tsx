@@ -94,7 +94,7 @@ function TerminalModalInner({ isOpen, onClose }: TerminalModalProps) {
     const term = termRef.current;
     const fitAddon = fitAddonRef.current;
 
-    // Determine WebSocket URL
+    // Determine WebSocket URL (auth token is sent after connection, not in URL)
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const host =
       window.location.hostname === "localhost"
@@ -107,8 +107,8 @@ function TerminalModalInner({ isOpen, onClose }: TerminalModalProps) {
 
     const cols = term.cols || 80;
     const rows = term.rows || 24;
-    // Use access code from store for terminal authentication
-    const wsUrl = `${protocol}//${host}${wsPath}?cols=${cols}&rows=${rows}&auth=${accessCode}`;
+    // Auth token is now sent after connection for security (not in URL query string)
+    const wsUrl = `${protocol}//${host}${wsPath}?cols=${cols}&rows=${rows}`;
 
     console.log("[Terminal] Connecting to:", wsUrl);
 
@@ -131,13 +131,10 @@ function TerminalModalInner({ isOpen, onClose }: TerminalModalProps) {
     wsRef.current = ws;
 
     ws.onopen = () => {
-      console.log("[Terminal] WebSocket connected");
-      setConnected(true);
-      setError(null);
-      term.writeln("\x1b[32m✓ Connected!\x1b[0m");
-      term.writeln("");
-      // Fit again after connection
-      requestAnimationFrame(() => fitAddon.fit());
+      console.log("[Terminal] WebSocket connected, sending auth...");
+      // Send authentication token after connection (more secure than URL param)
+      ws.send(JSON.stringify({ type: "auth", token: accessCode }));
+      term.writeln("\x1b[90mAuthenticating...\x1b[0m");
     };
 
     ws.onmessage = (event) => {
@@ -148,18 +145,31 @@ function TerminalModalInner({ isOpen, onClose }: TerminalModalProps) {
             term.write(msg.data);
             break;
           case "ready":
+            // Authentication successful, terminal is ready
             console.log(
-              "[Terminal] Session ready:",
+              "[Terminal] Authenticated! Session:",
               msg.sessionId,
               "PID:",
               msg.pid,
             );
+            setConnected(true);
+            setError(null);
+            term.writeln("\x1b[32m✓ Connected!\x1b[0m");
+            term.writeln("");
+            // Fit after ready
+            requestAnimationFrame(() => fitAddon.fit());
             break;
           case "exit":
             term.writeln(
               `\r\n\x1b[33m[Session ended with code ${msg.code}]\x1b[0m`,
             );
             setConnected(false);
+            break;
+          case "error":
+            // Authentication or other error
+            console.error("[Terminal] Server error:", msg.message);
+            term.writeln(`\r\n\x1b[31m✗ ${msg.message}\x1b[0m`);
+            setError(msg.message);
             break;
           case "pong":
             break;

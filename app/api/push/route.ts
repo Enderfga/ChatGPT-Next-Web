@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { Redis } from "@upstash/redis";
+import { Ratelimit } from "@upstash/ratelimit";
 
 // 多模态内容类型（与 client/api.ts 保持一致）
 interface MultimodalContent {
@@ -24,6 +25,14 @@ interface PushMessage {
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
+
+// Rate limiter: 60 requests per minute per token/IP
+const ratelimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(60, "1 m"),
+  analytics: true,
+  prefix: "push:ratelimit:",
 });
 
 // Redis key 前缀
@@ -85,7 +94,39 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Rate limiting - use IP or token as identifier
+  const rateLimitKey =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("x-real-ip") ||
+    "anonymous";
+
   try {
+    // Check rate limit
+    const { success, limit, remaining, reset } =
+      await ratelimit.limit(rateLimitKey);
+
+    if (!success) {
+      console.log(`[Push] Rate limited: ${rateLimitKey}`);
+      return NextResponse.json(
+        {
+          error: "Rate limit exceeded",
+          limit,
+          remaining: 0,
+          resetAt: new Date(reset).toISOString(),
+        },
+        {
+          status: 429,
+          headers: {
+            "X-RateLimit-Limit": limit.toString(),
+            "X-RateLimit-Remaining": "0",
+            "X-RateLimit-Reset": reset.toString(),
+            "Retry-After": Math.ceil((reset - Date.now()) / 1000).toString(),
+          },
+        },
+      );
+    }
+
+    // Parse request body
     const body = await req.json();
     const { sessionId, type, content, role, metadata } = body;
 
@@ -117,11 +158,21 @@ export async function POST(req: NextRequest) {
 
     console.log(`[Push] Message queued for session ${sessionId} (Redis)`);
 
-    return NextResponse.json({
-      success: true,
-      messageId: message.id,
-      queued: true,
-    });
+    // Return success with rate limit headers
+    return NextResponse.json(
+      {
+        success: true,
+        messageId: message.id,
+        queued: true,
+      },
+      {
+        headers: {
+          "X-RateLimit-Limit": limit.toString(),
+          "X-RateLimit-Remaining": remaining.toString(),
+          "X-RateLimit-Reset": reset.toString(),
+        },
+      },
+    );
   } catch (e) {
     console.error("[Push] Redis POST error:", e);
     return NextResponse.json(

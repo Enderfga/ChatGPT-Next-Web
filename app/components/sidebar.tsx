@@ -333,7 +333,7 @@ export function SideBar(props: { className?: string }) {
   // 当前后端真实运行的模型（由 API 返回）
   const [backendModel, setBackendModel] = useState<string>("");
 
-  const checkHealth = async () => {
+  const checkHealth = async (retries = 2) => {
     try {
       const res = await fetch("/api/health");
       if (res.ok) {
@@ -351,10 +351,21 @@ export function SideBar(props: { className?: string }) {
           (window as any).__CLAWDBOT_ADMIN_URL = data.adminUrl;
         }
       } else {
+        // Retry on non-200 responses
+        if (retries > 0) {
+          setTimeout(() => checkHealth(retries - 1), 2000);
+        } else {
+          setHealthStatus("offline");
+        }
+      }
+    } catch (e) {
+      console.error("[Health] Check failed:", e);
+      // Retry on network errors
+      if (retries > 0) {
+        setTimeout(() => checkHealth(retries - 1), 2000);
+      } else {
         setHealthStatus("offline");
       }
-    } catch {
-      setHealthStatus("offline");
     }
   };
 
