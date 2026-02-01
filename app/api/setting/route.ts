@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
-  const adminUrl = process.env.CLAWDBOT_ADMIN_URL || "https://api.enderfga.cn";
+  const adminUrl = process.env.OPENCLAW_ADMIN_URL || "https://api.enderfga.cn";
 
-  const authCookie = req.cookies.get("clawdbot_auth")?.value;
+  const authCookie = req.cookies.get("openclaw_auth")?.value;
   // 使用 CODE 环境变量作为认证，不再有硬编码默认值
-  const secretToken = process.env.CODE || process.env.CLAWDBOT_SECRET_TOKEN;
+  const secretToken = process.env.CODE || process.env.OPENCLAW_SECRET_TOKEN;
 
   // 如果没有配置 secretToken，拒绝访问
   if (!secretToken) {
@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
             function login() {
                 const token = input.value;
                 if (!token) return;
-                document.cookie = "clawdbot_auth=" + token + "; path=/; max-age=" + (30 * 24 * 60 * 60) + "; SameSite=Lax";
+                document.cookie = "openclaw_auth=" + token + "; path=/; max-age=" + (30 * 24 * 60 * 60) + "; SameSite=Lax";
                 location.reload();
             }
             btn.addEventListener('click', login);

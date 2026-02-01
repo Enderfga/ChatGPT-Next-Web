@@ -1493,8 +1493,8 @@ export function Settings() {
     }
   };
 
-  const restartClawdbot = async () => {
-    if (await showConfirm(Locale.Settings.Access.Clawdbot.RestartConfirm)) {
+  const restartOpenclaw = async () => {
+    if (await showConfirm(Locale.Settings.Access.Openclaw.RestartConfirm)) {
       try {
         await fetch("/api/health", {
           method: "POST",
@@ -1825,23 +1825,23 @@ export function Settings() {
 
         <List id={SlotID.CustomModel}>
           <ListItem
-            title={Locale.Settings.Access.Clawdbot.Title}
-            subTitle={healthStatus || Locale.Settings.Access.Clawdbot.SubTitle}
+            title={Locale.Settings.Access.Openclaw.Title}
+            subTitle={healthStatus || Locale.Settings.Access.Openclaw.SubTitle}
           >
             <div style={{ display: "flex" }}>
               <IconButton
                 icon={checkingHealth ? <LoadingIcon /> : <ConnectionIcon />}
-                text={Locale.Settings.Access.Clawdbot.Health}
+                text={Locale.Settings.Access.Openclaw.Health}
                 onClick={checkHealth}
               />
               <IconButton
                 icon={<PowerIcon />}
-                text={Locale.Settings.Access.Clawdbot.Restart}
-                onClick={restartClawdbot}
+                text={Locale.Settings.Access.Openclaw.Restart}
+                onClick={restartOpenclaw}
               />
               <IconButton
                 icon={<RobotIcon />}
-                text={Locale.Settings.Access.Clawdbot.GoToSasha}
+                text={Locale.Settings.Access.Openclaw.GoToSasha}
                 onClick={() => {
                   const adminUrl = "https://api.enderfga.cn";
                   // Try direct navigation first

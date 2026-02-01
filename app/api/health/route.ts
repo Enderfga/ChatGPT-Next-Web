@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 async function handle(req: NextRequest) {
-  const adminUrl = process.env.CLAWDBOT_ADMIN_URL || "https://api.enderfga.cn";
+  const adminUrl = process.env.OPENCLAW_ADMIN_URL || "https://api.enderfga.cn";
   const gatewayApiUrl = `${adminUrl}/gateway-api`;
   const doctorApiUrl = `${adminUrl}/sasha-doctor`;
 
@@ -105,7 +105,7 @@ async function handle(req: NextRequest) {
         }
       }
 
-      // Action: doctor - Run clawdbot doctor --fix only
+      // Action: doctor - Run openclaw doctor --fix only
       if (action === "doctor") {
         console.log("[Health] Doctor requested...");
         const doctorRes = await fetch(`${doctorApiUrl}/doctor`, {

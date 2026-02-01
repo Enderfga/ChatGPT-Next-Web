@@ -250,10 +250,10 @@ export function SideBarTail(props: {
         <div
           title={
             healthStatus === "online"
-              ? "Clawdbot Online"
+              ? "Openclaw Online"
               : healthStatus === "loading"
               ? "Checking..."
-              : "Clawdbot Offline"
+              : "Openclaw Offline"
           }
           style={{
             width: "10px",
@@ -299,8 +299,8 @@ export function SideBar(props: { className?: string }) {
   const session = chatStore.currentSession();
   const currentModel = session.mask.modelConfig.model;
 
-  // 只有选中了 Clawdbot（通常是列表第一个，名称包含 opus-4-5）才显示
-  const isClawdbotSelected = currentModel.toLowerCase().includes("opus-4-5");
+  // 只有选中了 Openclaw（通常是列表第一个，名称包含 opus-4-5）才显示
+  const isOpenclawSelected = currentModel.toLowerCase().includes("opus-4-5");
 
   const MODEL_OPTIONS = [
     { title: "Gemini 3 Flash", value: "google/gemini-3-flash-preview" },
@@ -340,7 +340,7 @@ export function SideBar(props: { className?: string }) {
         if (data.model) setBackendModel(data.model);
         if (data.adminUrl) {
           setAdminUrl(data.adminUrl);
-          (window as any).__CLAWDBOT_ADMIN_URL = data.adminUrl;
+          (window as any).__OPENCLAW_ADMIN_URL = data.adminUrl;
         }
       } else {
         // Retry on non-200 responses
@@ -364,7 +364,7 @@ export function SideBar(props: { className?: string }) {
   const handleRestart = async () => {
     if (
       await showConfirm(
-        "确定要重启 Clawdbot 吗？\n\n如果普通重启失败，将自动尝试智能修复 (doctor --fix)",
+        "确定要重启 Openclaw 吗？\n\n如果普通重启失败，将自动尝试智能修复 (doctor --fix)",
       )
     ) {
       setHealthStatus("loading");
@@ -392,7 +392,7 @@ export function SideBar(props: { className?: string }) {
   const handleModelChange = async (newModel: string) => {
     if (
       await showConfirm(
-        `确定要将 Clawdbot 的主模型切换为 ${newModel} 吗？\n\n这会导致后端服务立即重启。`,
+        `确定要将 Openclaw 的主模型切换为 ${newModel} 吗？\n\n这会导致后端服务立即重启。`,
       )
     ) {
       setHealthStatus("loading");
@@ -449,7 +449,7 @@ export function SideBar(props: { className?: string }) {
             >
               Chat
             </div>
-            {isClawdbotSelected && !shouldNarrow && (
+            {isOpenclawSelected && !shouldNarrow && (
               <div
                 onClick={() => setShowModelSelector(true)}
                 style={{
@@ -548,9 +548,9 @@ export function SideBar(props: { className?: string }) {
                 onClick={() => {
                   const adminPath = "https://api.enderfga.cn/";
                   window.open(adminPath, "_blank");
-                  showToast("正在打开 Clawdbot 控制台...");
+                  showToast("正在打开 Openclaw 控制台...");
                 }}
-                title="打开 Clawdbot 管理面板"
+                title="打开 Openclaw 管理面板"
                 shadow
               />
             </div>

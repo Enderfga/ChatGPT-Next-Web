@@ -107,7 +107,7 @@ export async function requestOpenai(req: NextRequest) {
   console.log("fetchUrl", fetchUrl);
 
   // Get session key from request headers for consistent session tracking
-  const webchatSessionId = req.headers.get("x-clawdbot-session-key");
+  const webchatSessionId = req.headers.get("x-openclaw-session-key");
 
   const fetchOptions: RequestInit = {
     headers: {
@@ -126,7 +126,7 @@ export async function requestOpenai(req: NextRequest) {
       }),
       // Forward session key for consistent session tracking
       ...(webchatSessionId && {
-        "x-clawdbot-session-key": webchatSessionId,
+        "x-openclaw-session-key": webchatSessionId,
       }),
     },
     method: req.method,

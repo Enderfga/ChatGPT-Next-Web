@@ -253,10 +253,10 @@ export function getHeaders(ignoreHeaders: boolean = false) {
   }
 
   // Add webchat session ID for push capability
-  // Use x-clawdbot-session-key for consistent session tracking across channels
+  // Use x-openclaw-session-key for consistent session tracking across channels
   const sessionId = chatStore.currentSession()?.id;
   if (sessionId) {
-    headers["x-clawdbot-session-key"] = `webchat:${sessionId}`;
+    headers["x-openclaw-session-key"] = `webchat:${sessionId}`;
   }
 
   const clientConfig = getClientConfig();

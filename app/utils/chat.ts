@@ -110,7 +110,7 @@ export async function preProcessImageContent(
     // 检查是否是 base64 data URL
     const parsed = parseDataUrl(url);
     if (parsed) {
-      // 返回包含显式 media_type 的格式，让 Clawdbot 能正确解析
+      // 返回包含显式 media_type 的格式，让 Openclaw 能正确解析
       return {
         type: "image_url",
         image_url: {

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 export async function GET() {
-  const adminUrl = process.env.CLAWDBOT_ADMIN_URL || "https://api.enderfga.cn";
+  const adminUrl = process.env.OPENCLAW_ADMIN_URL || "https://api.enderfga.cn";
   const cfId = process.env.CF_ACCESS_CLIENT_ID;
   const cfSecret = process.env.CF_ACCESS_CLIENT_SECRET;
 

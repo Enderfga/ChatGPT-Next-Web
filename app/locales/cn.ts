@@ -301,12 +301,12 @@ const cn = {
     },
 
     Access: {
-      Clawdbot: {
-        Title: "Clawdbot 状态",
-        SubTitle: "查看并管理 Clawdbot 守护进程",
+      Openclaw: {
+        Title: "Openclaw 状态",
+        SubTitle: "查看并管理 Openclaw 守护进程",
         Health: "检查状态",
         Restart: "手动重启",
-        RestartConfirm: "确认重启 Clawdbot 吗？这可能会导致当前连接断开。",
+        RestartConfirm: "确认重启 Openclaw 吗？这可能会导致当前连接断开。",
         GoToSasha: "前往 莎莎大人",
       },
       SaasStart: {
