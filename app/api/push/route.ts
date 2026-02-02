@@ -37,11 +37,23 @@ const ratelimit = new Ratelimit({
 
 // Redis key 前缀
 const QUEUE_PREFIX = "push:queue:";
-const AGENT_STATUS_KEY = "agent:status";
 const QUEUE_TTL = 5 * 60; // 5 分钟过期
 
 // GET: 轮询获取消息
 export async function GET(req: NextRequest) {
+  // 验证认证 - 需要 Bearer token 或 CF Access headers
+  const authHeader = req.headers.get("Authorization");
+  const cfAccessId = req.headers.get("CF-Access-Client-Id");
+  const expectedCode = process.env.CODE;
+
+  if (expectedCode) {
+    const token = authHeader?.replace("Bearer ", "");
+    // 允许 Bearer token 或 CF Access Service Account
+    if (token !== expectedCode && !cfAccessId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+  }
+
   const sessionId = req.nextUrl.searchParams.get("sessionId");
 
   if (!sessionId) {
@@ -149,14 +161,17 @@ export async function POST(req: NextRequest) {
 
     const key = `${QUEUE_PREFIX}${sessionId}`;
 
-    // 推入队列并设置过期时间
-    await redis.rpush(key, message);
-    await redis.expire(key, QUEUE_TTL);
+    // 使用 pipeline 合并 Redis 调用，减少网络往返
+    await redis
+      .pipeline()
+      .rpush(key, message)
+      .expire(key, QUEUE_TTL)
+      .ltrim(key, -100, -1)
+      .exec();
 
-    // 限制队列大小（保留最新 100 条）
-    await redis.ltrim(key, -100, -1);
-
-    console.log(`[Push] Message queued for session ${sessionId} (Redis)`);
+    console.log(
+      `[Push] Message queued for session ${sessionId.slice(0, 8)}...`,
+    );
 
     // Return success with rate limit headers
     return NextResponse.json(
