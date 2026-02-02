@@ -632,15 +632,15 @@ export const useChatStore = createPersistStore(
 You can push async messages to this session using the async-task skill.
 Current session ID: ${session.id}
 
-Usage:
-- async-task start "task description" - Mark task as started
-- async-task done "result" - Push result when done
-- async-task push "message" - Push a single message
+Usage (MUST include --session parameter):
+- async-task start "task description" --session ${session.id}
+- async-task done "result" --session ${session.id}
+- async-task push "message" --session ${session.id}
 
 IMPORTANT:
+- ALWAYS use --session ${session.id} to ensure messages reach this conversation.
 - Only push ONCE per task completion. Do NOT loop or retry.
 - If push succeeds, you're done. Move on.
-- Do NOT use raw curl commands - use async-task skill instead.
 `;
 
         var systemPrompts: ChatMessage[] = [];
