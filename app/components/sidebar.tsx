@@ -12,6 +12,7 @@ import ReloadIcon from "../icons/reload.svg";
 import ConnectionIcon from "../icons/connection.svg";
 import TerminalIcon from "../icons/terminal.svg";
 import BookIcon from "../icons/book.svg";
+import NexusIcon from "../icons/nexus.svg";
 
 import { TerminalModal } from "./terminal-modal";
 
@@ -542,6 +543,14 @@ export function SideBar(props: { className?: string }) {
         healthStatus={healthStatus}
         primaryAction={
           <>
+            <div className={styles["sidebar-action"]}>
+              <IconButton
+                icon={<NexusIcon />}
+                onClick={() => navigate(Path.Nexus)}
+                title="NEXUS 超级终端"
+                shadow
+              />
+            </div>
             <div className={styles["sidebar-action"]}>
               <IconButton
                 icon={<ConnectionIcon />}
