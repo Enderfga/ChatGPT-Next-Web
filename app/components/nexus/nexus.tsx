@@ -4,442 +4,492 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./nexus.module.scss";
 import { Path } from "../../constant";
-import { useChatStore } from "../../store";
-import { useAccessStore } from "../../store";
+import { useChatStore, useAccessStore } from "../../store";
 import "xterm/css/xterm.css";
 
-// Icons
-const CloseIcon = () => (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-  >
-    <line x1="18" y1="6" x2="6" y2="18"></line>
-    <line x1="6" y1="6" x2="18" y2="18"></line>
+// ============ SVG ICONS ============
+
+// OpenAI Logo
+const OpenAILogo = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className={styles.modelLogo}>
+    <path d="M22.282 9.821a5.985 5.985 0 0 0-.516-4.91 6.046 6.046 0 0 0-6.51-2.9A6.065 6.065 0 0 0 4.981 4.18a5.985 5.985 0 0 0-3.998 2.9 6.046 6.046 0 0 0 .743 7.097 5.98 5.98 0 0 0 .51 4.911 6.051 6.051 0 0 0 6.515 2.9A5.985 5.985 0 0 0 13.26 24a6.056 6.056 0 0 0 5.772-4.206 5.99 5.99 0 0 0 3.997-2.9 6.056 6.056 0 0 0-.747-7.073zM13.26 22.43a4.476 4.476 0 0 1-2.876-1.04l.141-.081 4.779-2.758a.795.795 0 0 0 .392-.681v-6.737l2.02 1.168a.071.071 0 0 1 .038.052v5.583a4.504 4.504 0 0 1-4.494 4.494zM3.6 18.304a4.47 4.47 0 0 1-.535-3.014l.142.085 4.783 2.759a.771.771 0 0 0 .78 0l5.843-3.369v2.332a.08.08 0 0 1-.033.062L9.74 19.95a4.5 4.5 0 0 1-6.14-1.646zM2.34 7.896a4.485 4.485 0 0 1 2.366-1.973V11.6a.766.766 0 0 0 .388.676l5.815 3.355-2.02 1.168a.076.076 0 0 1-.071 0l-4.83-2.786A4.504 4.504 0 0 1 2.34 7.872zm16.597 3.855l-5.833-3.387L15.119 7.2a.076.076 0 0 1 .071 0l4.83 2.791a4.494 4.494 0 0 1-.676 8.105v-5.678a.79.79 0 0 0-.407-.667zm2.01-3.023l-.141-.085-4.774-2.782a.776.776 0 0 0-.785 0L9.409 9.23V6.897a.066.066 0 0 1 .028-.061l4.83-2.787a4.5 4.5 0 0 1 6.68 4.66zm-12.64 4.135l-2.02-1.164a.08.08 0 0 1-.038-.057V6.075a4.5 4.5 0 0 1 7.375-3.453l-.142.08L8.704 5.46a.795.795 0 0 0-.393.681zm1.097-2.365l2.602-1.5 2.607 1.5v2.999l-2.597 1.5-2.607-1.5z" />
   </svg>
 );
 
-const MinimizeIcon = () => (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-  >
-    <line x1="5" y1="12" x2="19" y2="12"></line>
+// Google Gemini Logo
+const GeminiLogo = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className={styles.modelLogo}>
+    <path d="M12 0C5.372 0 0 5.372 0 12s5.372 12 12 12 12-5.372 12-12S18.628 0 12 0zm0 3.6c4.638 0 8.4 3.762 8.4 8.4s-3.762 8.4-8.4 8.4-8.4-3.762-8.4-8.4S7.362 3.6 12 3.6zm0 2.4a6 6 0 1 0 0 12 6 6 0 0 0 0-12zm0 2.4a3.6 3.6 0 1 1 0 7.2 3.6 3.6 0 0 1 0-7.2z" />
   </svg>
 );
 
-const MaximizeIcon = () => (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-  >
-    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+// Anthropic Claude Logo
+const ClaudeLogo = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className={styles.modelLogo}>
+    <path d="M12 2L2 7v10l10 5 10-5V7L12 2zm0 2.18l7.06 3.53L12 11.24 4.94 7.71 12 4.18zM4 8.94l7 3.5v6.62l-7-3.5V8.94zm9 10.12v-6.62l7-3.5v6.62l-7 3.5z" />
   </svg>
 );
 
-const SendIcon = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-  >
-    <line x1="22" y1="2" x2="11" y2="13"></line>
-    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-  </svg>
-);
-
+// Panel Icons
 const TerminalIcon = () => (
   <svg
-    width="16"
-    height="16"
+    width="14"
+    height="14"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
     strokeWidth="2"
   >
-    <polyline points="4 17 10 11 4 5"></polyline>
-    <line x1="12" y1="19" x2="20" y2="19"></line>
+    <polyline points="4 17 10 11 4 5" />
+    <line x1="12" y1="19" x2="20" y2="19" />
   </svg>
 );
 
 const ChatIcon = () => (
   <svg
-    width="16"
-    height="16"
+    width="14"
+    height="14"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
     strokeWidth="2"
   >
-    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
   </svg>
 );
 
-const CouncilIcon = () => (
+const GpuIcon = () => (
   <svg
-    width="16"
-    height="16"
+    width="14"
+    height="14"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
     strokeWidth="2"
   >
-    <circle cx="12" cy="12" r="10"></circle>
-    <circle cx="12" cy="12" r="4"></circle>
-    <line x1="4.93" y1="4.93" x2="9.17" y2="9.17"></line>
-    <line x1="14.83" y1="14.83" x2="19.07" y2="19.07"></line>
-    <line x1="14.83" y1="9.17" x2="19.07" y2="4.93"></line>
-    <line x1="4.93" y1="19.07" x2="9.17" y2="14.83"></line>
+    <rect x="4" y="4" width="16" height="16" rx="2" />
+    <rect x="9" y="9" width="6" height="6" />
   </svg>
 );
 
-interface Message {
+const ServerIcon = () => (
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+  >
+    <rect x="2" y="3" width="20" height="6" rx="1" />
+    <rect x="2" y="15" width="20" height="6" rx="1" />
+    <circle cx="6" cy="6" r="1" fill="currentColor" />
+    <circle cx="6" cy="18" r="1" fill="currentColor" />
+  </svg>
+);
+
+const CloseIcon = () => (
+  <svg
+    width="12"
+    height="12"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+  >
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+
+const MaxIcon = () => (
+  <svg
+    width="12"
+    height="12"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+  >
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+  </svg>
+);
+
+const MinIcon = () => (
+  <svg
+    width="12"
+    height="12"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+  >
+    <line x1="5" y1="12" x2="19" y2="12" />
+  </svg>
+);
+
+// ============ TYPES ============
+
+interface GpuInfo {
+  name: string;
+  utilization: number;
+  memory: { used: number; total: number };
+  temperature: number;
+}
+
+interface ServiceStatus {
+  name: string;
+  status: "running" | "stopped" | "unknown";
+  pid?: number;
+}
+
+interface PanelState {
   id: string;
-  role: "user" | "assistant";
-  content: string;
-  timestamp: Date;
+  title: string;
+  icon: React.ReactNode;
+  minimized: boolean;
+  maximized: boolean;
 }
 
-interface SystemStatus {
-  cpu: number;
-  memory: number;
-  gateway: "online" | "offline" | "unknown";
-  network: number[];
-}
-
-interface CouncilMessage {
-  agent: "gpt" | "gemini" | "claude";
-  content: string;
-  timestamp: Date;
-  vote?: "yes" | "no";
-}
-
-// Dracula-inspired cyber theme for terminal
-const terminalTheme = {
-  background: "#0a0a12",
-  foreground: "#e0e0e8",
-  cursor: "#00fff7",
-  cursorAccent: "#0a0a12",
-  black: "#0a0a12",
-  red: "#ff5555",
-  green: "#00ff88",
-  yellow: "#ffaa00",
-  blue: "#00d4ff",
-  magenta: "#bd93f9",
-  cyan: "#00fff7",
-  white: "#e0e0e8",
-  brightBlack: "#4d4d5a",
-  brightRed: "#ff6e6e",
-  brightGreen: "#69ff94",
-  brightYellow: "#ffffa5",
-  brightBlue: "#d6acff",
-  brightMagenta: "#ff92df",
-  brightCyan: "#a4ffff",
-  brightWhite: "#ffffff",
-};
+// ============ MAIN COMPONENT ============
 
 export function Nexus() {
   const navigate = useNavigate();
-  const chatStore = useChatStore();
   const accessStore = useAccessStore();
+  const chatStore = useChatStore();
 
   // Panel states
-  const [activePanel, setActivePanel] = useState<
-    "dialogue" | "terminal" | "council"
-  >("dialogue");
-  const [terminalMode, setTerminalMode] = useState<"local" | "ssh">("local");
-  const [isConnected, setIsConnected] = useState(false);
-
-  // Messages
-  const [messages, setMessages] = useState<Message[]>([
+  const [panels, setPanels] = useState<PanelState[]>([
     {
-      id: "1",
-      role: "assistant",
-      content: "⬢ SASHA NEXUS 已激活。欢迎回来，安总。",
-      timestamp: new Date(),
+      id: "terminal",
+      title: "TERMINAL",
+      icon: <TerminalIcon />,
+      minimized: false,
+      maximized: false,
+    },
+    {
+      id: "gpu",
+      title: "GPU STATUS",
+      icon: <GpuIcon />,
+      minimized: false,
+      maximized: false,
+    },
+    {
+      id: "council",
+      title: "THREE MINDS",
+      icon: <ChatIcon />,
+      minimized: false,
+      maximized: false,
+    },
+    {
+      id: "services",
+      title: "SERVICES",
+      icon: <ServerIcon />,
+      minimized: false,
+      maximized: false,
     },
   ]);
-  const [inputValue, setInputValue] = useState("");
-  const [isStreaming, setIsStreaming] = useState(false);
 
-  // Council state
-  const [councilMessages, setCouncilMessages] = useState<CouncilMessage[]>([]);
+  // Data states
+  const [gpuData, setGpuData] = useState<GpuInfo[]>([]);
+  const [services, setServices] = useState<ServiceStatus[]>([
+    { name: "openclaw-gateway", status: "unknown" },
+    { name: "sasha-doctor", status: "unknown" },
+    { name: "cloudflared", status: "unknown" },
+  ]);
+  const [councilMessages, setCouncilMessages] = useState<
+    Array<{
+      agent: "openai" | "google" | "anthropic";
+      content: string;
+      round: number;
+    }>
+  >([]);
   const [councilTopic, setCouncilTopic] = useState("");
-  const [councilActive, setCouncilActive] = useState(false);
-
-  // System status
-  const [systemStatus, setSystemStatus] = useState<SystemStatus>({
-    cpu: 23,
-    memory: 4.2,
-    gateway: "unknown",
-    network: [2, 4, 6, 8, 4, 6, 3, 5],
-  });
+  const [councilRunning, setCouncilRunning] = useState(false);
+  const [terminalMode, setTerminalMode] = useState<"local" | "gpu">("local");
 
   // Terminal refs
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<any>(null);
-  const fitAddonRef = useRef<any>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
 
-  // Messages container ref
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  // GPU terminal for fetching data
+  const gpuWsRef = useRef<WebSocket | null>(null);
 
-  // Scroll to bottom when messages change
+  // ============ TERMINAL ============
+
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  // Initialize terminal
-  useEffect(() => {
-    if (activePanel !== "terminal" || !terminalRef.current) return;
-
-    let terminal: any = null;
-    let fitAddon: any = null;
+    if (!terminalRef.current) return;
 
     const initTerminal = async () => {
-      // Dynamically import xterm (client-side only)
       const { Terminal } = await import("xterm");
       const { FitAddon } = await import("xterm-addon-fit");
       const { WebLinksAddon } = await import("xterm-addon-web-links");
 
-      // Clean up existing terminal
       if (xtermRef.current) {
         xtermRef.current.dispose();
       }
 
-      terminal = new Terminal({
-        theme: terminalTheme,
+      const terminal = new Terminal({
+        theme: {
+          background: "#0a0a12",
+          foreground: "#e0e0e8",
+          cursor: "#00fff7",
+          cursorAccent: "#0a0a12",
+          black: "#0a0a12",
+          red: "#ff5555",
+          green: "#00ff88",
+          yellow: "#ffaa00",
+          blue: "#00d4ff",
+          magenta: "#bd93f9",
+          cyan: "#00fff7",
+          white: "#e0e0e8",
+        },
         fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-        fontSize: 14,
+        fontSize: 13,
         cursorBlink: true,
         cursorStyle: "bar",
-        allowProposedApi: true,
       });
 
-      fitAddon = new FitAddon();
-      const webLinksAddon = new WebLinksAddon();
-
+      const fitAddon = new FitAddon();
       terminal.loadAddon(fitAddon);
-      terminal.loadAddon(webLinksAddon);
+      terminal.loadAddon(new WebLinksAddon());
 
-      if (terminalRef.current) {
-        terminal.open(terminalRef.current);
-        fitAddon.fit();
-      }
+      terminal.open(terminalRef.current!);
+      setTimeout(() => fitAddon.fit(), 100);
 
       xtermRef.current = terminal;
-      fitAddonRef.current = fitAddon;
 
-      // Connect to WebSocket
-      connectTerminal(terminal);
+      // Connect WebSocket
+      const isLocalhost =
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1";
+      const wsUrl = isLocalhost
+        ? "ws://localhost:18795/terminal"
+        : "wss://api.enderfga.cn/sasha-doctor/terminal";
+
+      terminal.writeln("\x1b[36m⬢ NEXUS Terminal v2.0\x1b[0m");
+      terminal.writeln("\x1b[90mConnecting...\x1b[0m");
+
+      const ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        setIsConnected(true);
+        terminal.writeln("\x1b[32m● Connected\x1b[0m\n");
+        const token = accessStore.accessCode;
+        if (token) ws.send(JSON.stringify({ type: "auth", token }));
+        ws.send(
+          JSON.stringify({
+            type: "resize",
+            cols: terminal.cols,
+            rows: terminal.rows,
+          }),
+        );
+      };
+
+      ws.onmessage = (e) => terminal.write(e.data);
+      ws.onclose = () => {
+        setIsConnected(false);
+        terminal.writeln("\n\x1b[31m● Disconnected\x1b[0m");
+      };
+
+      terminal.onData((data: string) => {
+        if (ws.readyState === WebSocket.OPEN) ws.send(data);
+      });
+
+      // Handle resize
+      const resizeObserver = new ResizeObserver(() => {
+        fitAddon.fit();
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(
+            JSON.stringify({
+              type: "resize",
+              cols: terminal.cols,
+              rows: terminal.rows,
+            }),
+          );
+        }
+      });
+      resizeObserver.observe(terminalRef.current!);
+
+      return () => {
+        resizeObserver.disconnect();
+        ws.close();
+        terminal.dispose();
+      };
     };
 
     initTerminal();
+  }, []);
 
-    // Handle resize
-    const handleResize = () => {
-      if (fitAddonRef.current) {
-        fitAddonRef.current.fit();
-      }
-      if (wsRef.current?.readyState === WebSocket.OPEN && xtermRef.current) {
-        wsRef.current.send(
-          JSON.stringify({
-            type: "resize",
-            cols: xtermRef.current.cols,
-            rows: xtermRef.current.rows,
-          }),
-        );
-      }
-    };
+  // ============ GPU MONITORING ============
 
-    window.addEventListener("resize", handleResize);
+  const fetchGpuStatus = useCallback(() => {
+    // Connect to GPU server and run nvidia-smi
+    const wsUrl = "wss://api.enderfga.cn/sasha-doctor/terminal";
 
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      wsRef.current?.close();
-      if (xtermRef.current) {
-        xtermRef.current.dispose();
-      }
-    };
-  }, [activePanel, terminalMode]);
-
-  const connectTerminal = (terminal: any) => {
-    const isLocalhost =
-      window.location.hostname === "localhost" ||
-      window.location.hostname === "127.0.0.1";
-    const wsUrl = isLocalhost
-      ? "ws://localhost:18795/terminal"
-      : "wss://api.enderfga.cn/sasha-doctor/terminal";
-
-    terminal.writeln("\x1b[36m⬢ Connecting to NEXUS Terminal...\x1b[0m");
+    if (gpuWsRef.current) {
+      gpuWsRef.current.close();
+    }
 
     const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
+    gpuWsRef.current = ws;
+    let outputBuffer = "";
 
     ws.onopen = () => {
-      setIsConnected(true);
-      terminal.writeln("\x1b[32m⬢ Connection established\x1b[0m");
-      terminal.writeln("");
-
-      // Send auth token
       const token = accessStore.accessCode;
-      if (token) {
-        ws.send(JSON.stringify({ type: "auth", token }));
+      if (token) ws.send(JSON.stringify({ type: "auth", token }));
+      // Execute nvidia-smi with parseable output
+      setTimeout(() => {
+        ws.send(
+          "ssh gpu 'nvidia-smi --query-gpu=name,utilization.gpu,memory.used,memory.total,temperature.gpu --format=csv,noheader,nounits' 2>/dev/null && echo '---END---'\n",
+        );
+      }, 500);
+    };
+
+    ws.onmessage = (e) => {
+      outputBuffer += e.data;
+      if (outputBuffer.includes("---END---")) {
+        // Parse nvidia-smi output
+        const lines = outputBuffer
+          .split("\n")
+          .filter((l) => l.includes(",") && !l.includes("---END---"));
+        const gpus: GpuInfo[] = lines.map((line) => {
+          const parts = line.split(",").map((s) => s.trim());
+          return {
+            name: parts[0] || "Unknown GPU",
+            utilization: parseInt(parts[1]) || 0,
+            memory: {
+              used: parseInt(parts[2]) || 0,
+              total: parseInt(parts[3]) || 0,
+            },
+            temperature: parseInt(parts[4]) || 0,
+          };
+        });
+        if (gpus.length > 0) {
+          setGpuData(gpus);
+        }
+        ws.close();
       }
-
-      // Send initial size
-      ws.send(
-        JSON.stringify({
-          type: "resize",
-          cols: terminal.cols,
-          rows: terminal.rows,
-        }),
-      );
-    };
-
-    ws.onmessage = (event) => {
-      terminal.write(event.data);
-    };
-
-    ws.onclose = () => {
-      setIsConnected(false);
-      terminal.writeln("\x1b[31m⬢ Connection closed\x1b[0m");
     };
 
     ws.onerror = () => {
-      terminal.writeln("\x1b[31m⬢ Connection error\x1b[0m");
+      // Fallback: show demo data if can't connect
+      setGpuData([
+        {
+          name: "NVIDIA RTX 4090",
+          utilization: 0,
+          memory: { used: 0, total: 24576 },
+          temperature: 35,
+        },
+      ]);
     };
+  }, [accessStore.accessCode]);
 
-    // Handle terminal input
-    terminal.onData((data: string) => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.send(data);
-      }
-    });
-  };
-
-  // Fetch system status
   useEffect(() => {
-    const fetchStatus = async () => {
+    fetchGpuStatus();
+    const interval = setInterval(fetchGpuStatus, 30000); // Refresh every 30s
+    return () => clearInterval(interval);
+  }, [fetchGpuStatus]);
+
+  // ============ SERVICES ============
+
+  useEffect(() => {
+    const checkServices = async () => {
       try {
-        const res = await fetch("/api/agent-status");
+        const res = await fetch("/api/health");
         if (res.ok) {
-          setSystemStatus((prev) => ({ ...prev, gateway: "online" }));
+          const data = await res.json();
+          setServices((prev) =>
+            prev.map((s) => {
+              if (s.name === "openclaw-gateway") {
+                return {
+                  ...s,
+                  status: data.status === "online" ? "running" : "stopped",
+                };
+              }
+              if (s.name === "sasha-doctor") {
+                return { ...s, status: "running" }; // If we got response, it's running
+              }
+              return s;
+            }),
+          );
         }
       } catch {
-        setSystemStatus((prev) => ({ ...prev, gateway: "offline" }));
+        // Services offline
       }
     };
 
-    fetchStatus();
-    const interval = setInterval(fetchStatus, 10000);
+    checkServices();
+    const interval = setInterval(checkServices, 15000);
     return () => clearInterval(interval);
   }, []);
 
-  // Handle send message
-  const handleSend = async () => {
-    if (!inputValue.trim() || isStreaming) return;
+  // ============ THREE MINDS ============
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: inputValue.trim(),
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setInputValue("");
-    setIsStreaming(true);
-
-    // Add assistant placeholder
-    const assistantId = (Date.now() + 1).toString();
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: assistantId,
-        role: "assistant",
-        content: "",
-        timestamp: new Date(),
-      },
-    ]);
-
-    try {
-      // Use chat store to send message
-      const session = chatStore.currentSession();
-      if (session) {
-        await chatStore.onUserInput(userMessage.content);
-      }
-    } catch (error) {
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === assistantId ? { ...m, content: "⚠ 连接中断，请重试" } : m,
-        ),
-      );
-    } finally {
-      setIsStreaming(false);
-    }
-  };
-
-  // Start council discussion
   const startCouncil = async () => {
-    if (!councilTopic.trim()) return;
+    if (!councilTopic.trim() || councilRunning) return;
 
-    setCouncilActive(true);
+    setCouncilRunning(true);
     setCouncilMessages([]);
 
-    // Simulate council discussion (in real implementation, call three-minds)
-    const agents: Array<"gpt" | "gemini" | "claude"> = [
-      "gpt",
-      "gemini",
-      "claude",
-    ];
-
-    for (const agent of agents) {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      setCouncilMessages((prev) => [
-        ...prev,
-        {
-          agent,
-          content: `[${agent.toUpperCase()}] 正在分析话题: "${councilTopic}"...`,
-          timestamp: new Date(),
-        },
-      ]);
-    }
-  };
-
-  // Quick commands
-  const quickCommands = [
-    { label: "/restart", cmd: "openclaw gateway restart" },
-    { label: "/status", cmd: "openclaw gateway status" },
-    { label: "/doctor", cmd: "openclaw doctor --fix" },
-    { label: "/logs", cmd: "tail -f ~/.openclaw/logs/gateway.log" },
-  ];
-
-  const executeQuickCommand = (cmd: string) => {
+    // Execute three-minds via terminal
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(cmd + "\n");
+      wsRef.current.send(`three-minds "${councilTopic}" --quiet 2>&1\n`);
     }
+
+    // Simulate for now (real implementation would parse output)
+    const agents: Array<"openai" | "google" | "anthropic"> = [
+      "openai",
+      "google",
+      "anthropic",
+    ];
+    for (let round = 1; round <= 2; round++) {
+      for (const agent of agents) {
+        await new Promise((r) => setTimeout(r, 1000));
+        setCouncilMessages((prev) => [
+          ...prev,
+          {
+            agent,
+            content: `[Round ${round}] Analyzing: "${councilTopic}"...`,
+            round,
+          },
+        ]);
+      }
+    }
+    setCouncilRunning(false);
   };
+
+  // ============ PANEL CONTROLS ============
+
+  const toggleMinimize = (id: string) => {
+    setPanels((prev) =>
+      prev.map((p) =>
+        p.id === id ? { ...p, minimized: !p.minimized, maximized: false } : p,
+      ),
+    );
+  };
+
+  const toggleMaximize = (id: string) => {
+    setPanels((prev) =>
+      prev.map((p) =>
+        p.id === id
+          ? { ...p, maximized: !p.maximized, minimized: false }
+          : { ...p, maximized: false },
+      ),
+    );
+  };
+
+  const maximizedPanel = panels.find((p) => p.maximized);
+
+  // ============ RENDER ============
 
   return (
     <div className={styles.nexus}>
       {/* Scan line effect */}
-      <div className={styles.scanline}></div>
+      <div className={styles.scanline} />
 
       {/* Header */}
       <header className={styles.header}>
@@ -448,170 +498,51 @@ export function Nexus() {
           <span className={styles.title}>SASHA NEXUS</span>
           <span className={styles.version}>v2.0</span>
         </div>
+        <div className={styles.headerCenter}>
+          <div className={styles.clock}>{new Date().toLocaleTimeString()}</div>
+        </div>
         <div className={styles.headerRight}>
-          <div className={styles.statusIndicator}>
-            <span
-              className={`${styles.statusDot} ${styles[systemStatus.gateway]}`}
-            ></span>
-            <span>
-              {systemStatus.gateway === "online" ? "ONLINE" : "OFFLINE"}
-            </span>
-          </div>
+          <span
+            className={`${styles.connStatus} ${
+              isConnected ? styles.online : ""
+            }`}
+          >
+            {isConnected ? "● CONNECTED" : "○ OFFLINE"}
+          </span>
           <button
-            className={styles.headerBtn}
+            className={styles.exitBtn}
             onClick={() => navigate(Path.Home)}
           >
-            <CloseIcon />
+            EXIT
           </button>
         </div>
       </header>
 
-      {/* Main content */}
-      <div className={styles.main}>
-        {/* Left panel - System Status */}
-        <aside className={styles.leftPanel}>
-          <div className={styles.panelSection}>
-            <h3 className={styles.sectionTitle}>SYSTEM STATUS</h3>
-            <div className={styles.statusGrid}>
-              <div className={styles.statusItem}>
-                <span className={styles.statusLabel}>CPU</span>
-                <div className={styles.statusBar}>
-                  <div
-                    className={styles.statusFill}
-                    style={{ width: `${systemStatus.cpu}%` }}
-                  ></div>
-                </div>
-                <span className={styles.statusValue}>{systemStatus.cpu}%</span>
-              </div>
-              <div className={styles.statusItem}>
-                <span className={styles.statusLabel}>MEM</span>
-                <div className={styles.statusBar}>
-                  <div
-                    className={styles.statusFill}
-                    style={{ width: `${(systemStatus.memory / 16) * 100}%` }}
-                  ></div>
-                </div>
-                <span className={styles.statusValue}>
-                  {systemStatus.memory}G
+      {/* Main Grid */}
+      <main className={styles.grid}>
+        {maximizedPanel ? (
+          // Maximized view
+          <div className={styles.maximizedPanel}>
+            {renderPanel(maximizedPanel.id)}
+          </div>
+        ) : (
+          // Grid view
+          <>
+            {/* Terminal - Top Left */}
+            <section
+              className={`${styles.panel} ${
+                panels[0].minimized ? styles.minimized : ""
+              }`}
+              data-panel="terminal"
+            >
+              <div className={styles.panelHeader}>
+                <span className={styles.panelIcon}>
+                  <TerminalIcon />
                 </span>
-              </div>
-              <div className={styles.statusItem}>
-                <span className={styles.statusLabel}>NET</span>
-                <div className={styles.networkGraph}>
-                  {systemStatus.network.map((v, i) => (
-                    <div
-                      key={i}
-                      className={styles.networkBar}
-                      style={{ height: `${v * 10}%` }}
-                    ></div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className={styles.panelSection}>
-            <h3 className={styles.sectionTitle}>QUICK CMD</h3>
-            <div className={styles.quickCommands}>
-              {quickCommands.map((qc, i) => (
-                <button
-                  key={i}
-                  className={styles.quickCmd}
-                  onClick={() => {
-                    setActivePanel("terminal");
-                    setTimeout(() => executeQuickCommand(qc.cmd), 500);
-                  }}
-                >
-                  {qc.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className={styles.panelSection}>
-            <h3 className={styles.sectionTitle}>PANELS</h3>
-            <div className={styles.panelButtons}>
-              <button
-                className={`${styles.panelBtn} ${
-                  activePanel === "dialogue" ? styles.active : ""
-                }`}
-                onClick={() => setActivePanel("dialogue")}
-              >
-                <ChatIcon /> Dialogue
-              </button>
-              <button
-                className={`${styles.panelBtn} ${
-                  activePanel === "terminal" ? styles.active : ""
-                }`}
-                onClick={() => setActivePanel("terminal")}
-              >
-                <TerminalIcon /> Terminal
-              </button>
-              <button
-                className={`${styles.panelBtn} ${
-                  activePanel === "council" ? styles.active : ""
-                }`}
-                onClick={() => setActivePanel("council")}
-              >
-                <CouncilIcon /> Council
-              </button>
-            </div>
-          </div>
-        </aside>
-
-        {/* Center panel - Main content area */}
-        <main className={styles.centerPanel}>
-          {activePanel === "dialogue" && (
-            <div className={styles.dialoguePanel}>
-              <div className={styles.dialogueHeader}>
-                <ChatIcon />
-                <span>DIALOGUE CORE</span>
-              </div>
-              <div className={styles.messages}>
-                {messages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`${styles.message} ${styles[msg.role]}`}
-                  >
-                    <div className={styles.messageContent}>
-                      {msg.content || <span className={styles.typing}>▋</span>}
-                    </div>
-                    <div className={styles.messageTime}>
-                      {msg.timestamp.toLocaleTimeString()}
-                    </div>
-                  </div>
-                ))}
-                <div ref={messagesEndRef} />
-              </div>
-              <div className={styles.inputArea}>
-                <input
-                  type="text"
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                  placeholder="输入消息..."
-                  className={styles.input}
-                  disabled={isStreaming}
-                />
-                <button
-                  className={styles.sendBtn}
-                  onClick={handleSend}
-                  disabled={isStreaming || !inputValue.trim()}
-                >
-                  <SendIcon />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {activePanel === "terminal" && (
-            <div className={styles.terminalPanel}>
-              <div className={styles.terminalHeader}>
-                <TerminalIcon />
-                <span>COMMAND TERMINAL</span>
-                <div className={styles.terminalTabs}>
+                <span className={styles.panelTitle}>TERMINAL</span>
+                <div className={styles.panelTabs}>
                   <button
-                    className={`${styles.terminalTab} ${
+                    className={`${styles.tab} ${
                       terminalMode === "local" ? styles.active : ""
                     }`}
                     onClick={() => setTerminalMode("local")}
@@ -619,93 +550,284 @@ export function Nexus() {
                     LOCAL
                   </button>
                   <button
-                    className={`${styles.terminalTab} ${
-                      terminalMode === "ssh" ? styles.active : ""
+                    className={`${styles.tab} ${
+                      terminalMode === "gpu" ? styles.active : ""
                     }`}
-                    onClick={() => setTerminalMode("ssh")}
+                    onClick={() => setTerminalMode("gpu")}
                   >
-                    SSH
+                    GPU SERVER
                   </button>
                 </div>
-                <div
-                  className={`${styles.connectionStatus} ${
-                    isConnected ? styles.connected : ""
-                  }`}
-                >
-                  {isConnected ? "● CONNECTED" : "○ DISCONNECTED"}
+                <div className={styles.panelControls}>
+                  <button onClick={() => toggleMinimize("terminal")}>
+                    <MinIcon />
+                  </button>
+                  <button onClick={() => toggleMaximize("terminal")}>
+                    <MaxIcon />
+                  </button>
                 </div>
               </div>
-              <div className={styles.terminalContainer} ref={terminalRef}></div>
-            </div>
-          )}
+              <div className={styles.panelContent}>
+                <div className={styles.terminalContainer} ref={terminalRef} />
+              </div>
+            </section>
 
-          {activePanel === "council" && (
-            <div className={styles.councilPanel}>
-              <div className={styles.councilHeader}>
-                <CouncilIcon />
-                <span>THREE MINDS COUNCIL</span>
-              </div>
-              <div className={styles.councilAgents}>
-                <div className={`${styles.agentBadge} ${styles.gpt}`}>
-                  <span className={styles.agentIcon}>🧠</span>
-                  <span>GPT-5.2</span>
-                </div>
-                <div className={`${styles.agentBadge} ${styles.gemini}`}>
-                  <span className={styles.agentIcon}>💎</span>
-                  <span>Gemini 3</span>
-                </div>
-                <div className={`${styles.agentBadge} ${styles.claude}`}>
-                  <span className={styles.agentIcon}>🎭</span>
-                  <span>Claude</span>
-                </div>
-              </div>
-              <div className={styles.councilMessages}>
-                {councilMessages.length === 0 ? (
-                  <div className={styles.councilEmpty}>
-                    输入讨论话题，召集三位 AI 顾问进行协商
-                  </div>
-                ) : (
-                  councilMessages.map((msg, i) => (
-                    <div
-                      key={i}
-                      className={`${styles.councilMsg} ${styles[msg.agent]}`}
-                    >
-                      <span className={styles.councilAgent}>
-                        {msg.agent === "gpt" && "🧠"}
-                        {msg.agent === "gemini" && "💎"}
-                        {msg.agent === "claude" && "🎭"}
-                      </span>
-                      <div className={styles.councilContent}>{msg.content}</div>
-                    </div>
-                  ))
-                )}
-              </div>
-              <div className={styles.councilInput}>
-                <input
-                  type="text"
-                  value={councilTopic}
-                  onChange={(e) => setCouncilTopic(e.target.value)}
-                  placeholder="输入讨论话题..."
-                  className={styles.input}
-                  disabled={councilActive}
-                />
-                <button
-                  className={styles.councilBtn}
-                  onClick={startCouncil}
-                  disabled={councilActive || !councilTopic.trim()}
-                >
-                  {councilActive ? "讨论中..." : "发起讨论"}
+            {/* GPU Status - Top Right */}
+            <section
+              className={`${styles.panel} ${
+                panels[1].minimized ? styles.minimized : ""
+              }`}
+              data-panel="gpu"
+            >
+              <div className={styles.panelHeader}>
+                <span className={styles.panelIcon}>
+                  <GpuIcon />
+                </span>
+                <span className={styles.panelTitle}>GPU STATUS</span>
+                <button className={styles.refreshBtn} onClick={fetchGpuStatus}>
+                  ↻
                 </button>
+                <div className={styles.panelControls}>
+                  <button onClick={() => toggleMinimize("gpu")}>
+                    <MinIcon />
+                  </button>
+                  <button onClick={() => toggleMaximize("gpu")}>
+                    <MaxIcon />
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
-        </main>
-      </div>
+              <div className={styles.panelContent}>
+                <div className={styles.gpuGrid}>
+                  {gpuData.length === 0 ? (
+                    <div className={styles.gpuLoading}>
+                      Fetching GPU data...
+                    </div>
+                  ) : (
+                    gpuData.map((gpu, i) => (
+                      <div key={i} className={styles.gpuCard}>
+                        <div className={styles.gpuName}>{gpu.name}</div>
+                        <div className={styles.gpuStats}>
+                          <div className={styles.gpuStat}>
+                            <span className={styles.gpuLabel}>UTIL</span>
+                            <div className={styles.gpuBar}>
+                              <div
+                                className={styles.gpuBarFill}
+                                style={{
+                                  width: `${gpu.utilization}%`,
+                                  background:
+                                    gpu.utilization > 80
+                                      ? "#ff5555"
+                                      : "#00ff88",
+                                }}
+                              />
+                            </div>
+                            <span className={styles.gpuValue}>
+                              {gpu.utilization}%
+                            </span>
+                          </div>
+                          <div className={styles.gpuStat}>
+                            <span className={styles.gpuLabel}>VRAM</span>
+                            <div className={styles.gpuBar}>
+                              <div
+                                className={styles.gpuBarFill}
+                                style={{
+                                  width: `${
+                                    (gpu.memory.used / gpu.memory.total) * 100
+                                  }%`,
+                                  background: "#00d4ff",
+                                }}
+                              />
+                            </div>
+                            <span className={styles.gpuValue}>
+                              {(gpu.memory.used / 1024).toFixed(1)}/
+                              {(gpu.memory.total / 1024).toFixed(0)}G
+                            </span>
+                          </div>
+                          <div className={styles.gpuStat}>
+                            <span className={styles.gpuLabel}>TEMP</span>
+                            <span
+                              className={`${styles.gpuTemp} ${
+                                gpu.temperature > 80 ? styles.hot : ""
+                              }`}
+                            >
+                              {gpu.temperature}°C
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </section>
+
+            {/* Three Minds - Bottom Left */}
+            <section
+              className={`${styles.panel} ${
+                panels[2].minimized ? styles.minimized : ""
+              }`}
+              data-panel="council"
+            >
+              <div className={styles.panelHeader}>
+                <span className={styles.panelIcon}>
+                  <ChatIcon />
+                </span>
+                <span className={styles.panelTitle}>THREE MINDS COUNCIL</span>
+                <div className={styles.panelControls}>
+                  <button onClick={() => toggleMinimize("council")}>
+                    <MinIcon />
+                  </button>
+                  <button onClick={() => toggleMaximize("council")}>
+                    <MaxIcon />
+                  </button>
+                </div>
+              </div>
+              <div className={styles.panelContent}>
+                <div className={styles.councilAgents}>
+                  <div className={`${styles.agentCard} ${styles.openai}`}>
+                    <OpenAILogo />
+                    <span>GPT-5.2</span>
+                  </div>
+                  <div className={`${styles.agentCard} ${styles.google}`}>
+                    <GeminiLogo />
+                    <span>Gemini 3</span>
+                  </div>
+                  <div className={`${styles.agentCard} ${styles.anthropic}`}>
+                    <ClaudeLogo />
+                    <span>Claude</span>
+                  </div>
+                </div>
+                <div className={styles.councilChat}>
+                  {councilMessages.length === 0 ? (
+                    <div className={styles.councilEmpty}>
+                      Enter a topic to start multi-model discussion
+                    </div>
+                  ) : (
+                    councilMessages.map((msg, i) => (
+                      <div
+                        key={i}
+                        className={`${styles.councilMsg} ${styles[msg.agent]}`}
+                      >
+                        <span className={styles.councilMsgAgent}>
+                          {msg.agent === "openai" && <OpenAILogo />}
+                          {msg.agent === "google" && <GeminiLogo />}
+                          {msg.agent === "anthropic" && <ClaudeLogo />}
+                        </span>
+                        <span className={styles.councilMsgText}>
+                          {msg.content}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <div className={styles.councilInput}>
+                  <input
+                    type="text"
+                    value={councilTopic}
+                    onChange={(e) => setCouncilTopic(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && startCouncil()}
+                    placeholder="Discussion topic..."
+                    disabled={councilRunning}
+                  />
+                  <button
+                    onClick={startCouncil}
+                    disabled={councilRunning || !councilTopic.trim()}
+                  >
+                    {councilRunning ? "RUNNING..." : "START"}
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            {/* Services - Bottom Right */}
+            <section
+              className={`${styles.panel} ${
+                panels[3].minimized ? styles.minimized : ""
+              }`}
+              data-panel="services"
+            >
+              <div className={styles.panelHeader}>
+                <span className={styles.panelIcon}>
+                  <ServerIcon />
+                </span>
+                <span className={styles.panelTitle}>SERVICES</span>
+                <div className={styles.panelControls}>
+                  <button onClick={() => toggleMinimize("services")}>
+                    <MinIcon />
+                  </button>
+                  <button onClick={() => toggleMaximize("services")}>
+                    <MaxIcon />
+                  </button>
+                </div>
+              </div>
+              <div className={styles.panelContent}>
+                <div className={styles.serviceList}>
+                  {services.map((svc, i) => (
+                    <div key={i} className={styles.serviceItem}>
+                      <span
+                        className={`${styles.serviceStatus} ${
+                          styles[svc.status]
+                        }`}
+                      />
+                      <span className={styles.serviceName}>{svc.name}</span>
+                      <span className={styles.serviceState}>
+                        {svc.status.toUpperCase()}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div className={styles.quickActions}>
+                  <button
+                    onClick={() =>
+                      wsRef.current?.send("openclaw gateway restart\n")
+                    }
+                  >
+                    Restart Gateway
+                  </button>
+                  <button
+                    onClick={() =>
+                      wsRef.current?.send("openclaw doctor --fix\n")
+                    }
+                  >
+                    Run Doctor
+                  </button>
+                </div>
+              </div>
+            </section>
+          </>
+        )}
+      </main>
 
       {/* Grid overlay */}
-      <div className={styles.gridOverlay}></div>
+      <div className={styles.gridOverlay} />
     </div>
   );
+
+  function renderPanel(id: string) {
+    // For maximized view - would render the same content as the grid panels
+    const panel = panels.find((p) => p.id === id);
+    if (!panel) return null;
+
+    return (
+      <section className={styles.panel} data-panel={id}>
+        <div className={styles.panelHeader}>
+          <span className={styles.panelIcon}>{panel.icon}</span>
+          <span className={styles.panelTitle}>{panel.title}</span>
+          <div className={styles.panelControls}>
+            <button onClick={() => toggleMaximize(id)}>
+              <CloseIcon />
+            </button>
+          </div>
+        </div>
+        <div className={styles.panelContent}>
+          {id === "terminal" && (
+            <div className={styles.terminalContainer} ref={terminalRef} />
+          )}
+          {/* Add other panel contents here */}
+        </div>
+      </section>
+    );
+  }
 }
 
 export default Nexus;

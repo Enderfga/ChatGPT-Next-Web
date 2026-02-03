@@ -1,137 +1,70 @@
-// SASHA NEXUS - Cyberpunk Command Center
-// Inspired by Ghost in the Shell SAC & EVA MAGI
+// SASHA NEXUS v2.0 - Cyberpunk Command Center
+// 4-panel grid layout, all visible at once
 
-// ========== Color Palette ==========
-$nexus-bg: #0a0a12;
-$nexus-bg-light: #12121c;
-$nexus-bg-panel: #0f0f18;
-$nexus-cyan: #00fff7;
-$nexus-cyan-dim: rgba(0, 255, 247, 0.3);
-$nexus-amber: #ffaa00;
-$nexus-red: #ff5555;
-$nexus-green: #00ff88;
-$nexus-purple: #bd93f9;
-$nexus-text: #e0e0e8;
-$nexus-text-dim: #6a6a7a;
-$nexus-border: rgba(0, 255, 247, 0.15);
-$nexus-glow: 0 0 20px rgba(0, 255, 247, 0.3);
+// ========== Colors ==========
+$bg-dark: #0a0a12;
+$bg-panel: #0d0d16;
+$bg-header: #12121c;
+$cyan: #00fff7;
+$cyan-dim: rgba(0, 255, 247, 0.2);
+$amber: #ffaa00;
+$red: #ff5555;
+$green: #00ff88;
+$blue: #00d4ff;
+$purple: #bd93f9;
+$text: #e0e0e8;
+$text-dim: #6a6a7a;
+$border: rgba(0, 255, 247, 0.12);
 
 // ========== Animations ==========
 @keyframes scanline {
-  0% {
-    transform: translateY(-100%);
-  }
-  100% {
-    transform: translateY(100vh);
-  }
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
 }
 
 @keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 @keyframes glow {
-  0%, 100% {
-    box-shadow: 0 0 5px $nexus-cyan-dim, 0 0 10px $nexus-cyan-dim;
-  }
-  50% {
-    box-shadow: 0 0 10px $nexus-cyan, 0 0 20px $nexus-cyan-dim;
-  }
-}
-
-@keyframes typing {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0;
-  }
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateX(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes networkPulse {
-  0%, 100% {
-    transform: scaleY(1);
-  }
-  50% {
-    transform: scaleY(0.6);
-  }
+  0%, 100% { box-shadow: 0 0 5px $cyan-dim; }
+  50% { box-shadow: 0 0 15px $cyan-dim, 0 0 30px rgba(0, 255, 247, 0.1); }
 }
 
 // ========== Main Container ==========
 .nexus {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: $nexus-bg;
-  color: $nexus-text;
+  inset: 0;
+  background: $bg-dark;
+  color: $text;
   font-family: "JetBrains Mono", "Fira Code", "SF Mono", monospace;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   z-index: 9999;
-
-  // Subtle noise texture
-  &::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-    opacity: 0.02;
-    pointer-events: none;
-    z-index: 0;
-  }
 }
 
-// ========== Scan Line Effect ==========
+// ========== Effects ==========
 .scanline {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 4px;
-  background: linear-gradient(
-    to bottom,
-    transparent,
-    rgba(0, 255, 247, 0.1),
-    transparent
-  );
-  animation: scanline 8s linear infinite;
+  height: 2px;
+  background: linear-gradient(to bottom, transparent, rgba(0, 255, 247, 0.08), transparent);
+  animation: scanline 6s linear infinite;
   pointer-events: none;
   z-index: 100;
 }
 
-// ========== Grid Overlay ==========
 .gridOverlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background-image:
-    linear-gradient(rgba(0, 255, 247, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 255, 247, 0.03) 1px, transparent 1px);
-  background-size: 50px 50px;
+    linear-gradient(rgba(0, 255, 247, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 247, 0.02) 1px, transparent 1px);
+  background-size: 40px 40px;
   pointer-events: none;
   z-index: 1;
 }
@@ -141,696 +74,558 @@ $nexus-glow: 0 0 20px rgba(0, 255, 247, 0.3);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 20px;
-  background: linear-gradient(180deg, $nexus-bg-light 0%, transparent 100%);
-  border-bottom: 1px solid $nexus-border;
-  position: relative;
+  padding: 8px 16px;
+  background: $bg-header;
+  border-bottom: 1px solid $border;
   z-index: 10;
+  min-height: 44px;
 }
 
-.headerLeft {
+.headerLeft, .headerRight {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
+.headerCenter {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
 .logo {
-  font-size: 24px;
-  color: $nexus-cyan;
-  text-shadow: 0 0 10px $nexus-cyan;
+  font-size: 20px;
+  color: $cyan;
+  text-shadow: 0 0 10px $cyan;
   animation: pulse 2s ease-in-out infinite;
 }
 
 .title {
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 700;
-  letter-spacing: 4px;
-  color: $nexus-text;
+  letter-spacing: 3px;
   text-transform: uppercase;
 }
 
 .version {
-  font-size: 10px;
-  color: $nexus-text-dim;
-  background: $nexus-bg-panel;
-  padding: 2px 8px;
-  border-radius: 4px;
-  border: 1px solid $nexus-border;
-}
-
-.headerRight {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.statusIndicator {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 11px;
-  letter-spacing: 1px;
-  color: $nexus-text-dim;
-}
-
-.statusDot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: $nexus-text-dim;
-
-  &.online {
-    background: $nexus-green;
-    box-shadow: 0 0 10px $nexus-green;
-    animation: pulse 2s ease-in-out infinite;
-  }
-
-  &.offline {
-    background: $nexus-red;
-  }
-
-  &.unknown {
-    background: $nexus-amber;
-  }
-}
-
-.headerBtn {
-  background: transparent;
-  border: 1px solid $nexus-border;
-  color: $nexus-text-dim;
-  padding: 8px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  &:hover {
-    color: $nexus-cyan;
-    border-color: $nexus-cyan;
-    box-shadow: $nexus-glow;
-  }
-}
-
-// ========== Main Layout ==========
-.main {
-  flex: 1;
-  display: flex;
-  overflow: hidden;
-  position: relative;
-  z-index: 5;
-}
-
-// ========== Left Panel ==========
-.leftPanel {
-  width: 220px;
-  background: $nexus-bg-panel;
-  border-right: 1px solid $nexus-border;
-  display: flex;
-  flex-direction: column;
-  padding: 16px;
-  gap: 20px;
-  overflow-y: auto;
-}
-
-.panelSection {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.sectionTitle {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 2px;
-  color: $nexus-cyan;
-  text-transform: uppercase;
-  margin: 0;
-  padding-bottom: 8px;
-  border-bottom: 1px solid $nexus-border;
-}
-
-// ========== Status Grid ==========
-.statusGrid {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.statusItem {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.statusLabel {
-  font-size: 10px;
-  color: $nexus-text-dim;
-  width: 32px;
-}
-
-.statusBar {
-  flex: 1;
-  height: 4px;
-  background: $nexus-bg;
-  border-radius: 2px;
-  overflow: hidden;
-}
-
-.statusFill {
-  height: 100%;
-  background: linear-gradient(90deg, $nexus-cyan, $nexus-green);
-  border-radius: 2px;
-  transition: width 0.3s ease;
-}
-
-.statusValue {
-  font-size: 10px;
-  color: $nexus-text;
-  width: 36px;
-  text-align: right;
-}
-
-.networkGraph {
-  flex: 1;
-  display: flex;
-  align-items: flex-end;
-  gap: 2px;
-  height: 20px;
-}
-
-.networkBar {
-  flex: 1;
-  background: $nexus-cyan;
-  min-height: 2px;
-  border-radius: 1px;
-  animation: networkPulse 2s ease-in-out infinite;
-  animation-delay: calc(var(--i, 0) * 0.1s);
-}
-
-// ========== Quick Commands ==========
-.quickCommands {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.quickCmd {
-  background: $nexus-bg;
-  border: 1px solid $nexus-border;
-  color: $nexus-text;
-  padding: 8px 12px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-family: inherit;
-  text-align: left;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    background: $nexus-bg-light;
-    border-color: $nexus-cyan;
-    color: $nexus-cyan;
-    box-shadow: inset 0 0 10px $nexus-cyan-dim;
-  }
-}
-
-// ========== Panel Buttons ==========
-.panelButtons {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.panelBtn {
-  background: transparent;
-  border: 1px solid $nexus-border;
-  color: $nexus-text-dim;
-  padding: 10px 12px;
-  border-radius: 6px;
-  font-size: 11px;
-  font-family: inherit;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.2s;
-
-  &:hover {
-    color: $nexus-text;
-    border-color: $nexus-text-dim;
-  }
-
-  &.active {
-    background: $nexus-cyan-dim;
-    border-color: $nexus-cyan;
-    color: $nexus-cyan;
-    box-shadow: $nexus-glow;
-  }
-
-  svg {
-    width: 14px;
-    height: 14px;
-  }
-}
-
-// ========== Center Panel ==========
-.centerPanel {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-// ========== Dialogue Panel ==========
-.dialoguePanel {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.dialogueHeader {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 20px;
-  background: $nexus-bg-panel;
-  border-bottom: 1px solid $nexus-border;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 2px;
-  color: $nexus-cyan;
-  text-transform: uppercase;
-
-  svg {
-    width: 16px;
-    height: 16px;
-  }
-}
-
-.messages {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.message {
-  max-width: 80%;
-  animation: slideIn 0.3s ease;
-
-  &.user {
-    align-self: flex-end;
-
-    .messageContent {
-      background: linear-gradient(135deg, $nexus-cyan-dim 0%, rgba(0, 212, 255, 0.2) 100%);
-      border: 1px solid $nexus-cyan;
-    }
-  }
-
-  &.assistant {
-    align-self: flex-start;
-
-    .messageContent {
-      background: $nexus-bg-panel;
-      border: 1px solid $nexus-border;
-    }
-  }
-}
-
-.messageContent {
-  padding: 12px 16px;
-  border-radius: 8px;
-  font-size: 13px;
-  line-height: 1.6;
-  white-space: pre-wrap;
-}
-
-.messageTime {
   font-size: 9px;
-  color: $nexus-text-dim;
-  margin-top: 4px;
-  padding: 0 4px;
+  color: $text-dim;
+  background: rgba(0, 255, 247, 0.1);
+  padding: 2px 6px;
+  border-radius: 3px;
 }
 
-.typing {
-  display: inline-block;
-  animation: typing 0.8s ease-in-out infinite;
+.clock {
+  font-size: 11px;
+  color: $text-dim;
+  font-variant-numeric: tabular-nums;
 }
 
-// ========== Input Area ==========
-.inputArea {
-  display: flex;
-  gap: 12px;
-  padding: 16px 20px;
-  background: $nexus-bg-panel;
-  border-top: 1px solid $nexus-border;
+.connStatus {
+  font-size: 10px;
+  color: $red;
+  &.online { color: $green; }
 }
 
-.input {
-  flex: 1;
-  background: $nexus-bg;
-  border: 1px solid $nexus-border;
-  border-radius: 6px;
-  padding: 12px 16px;
-  color: $nexus-text;
-  font-family: inherit;
-  font-size: 13px;
-  outline: none;
-  transition: all 0.2s;
-
-  &::placeholder {
-    color: $nexus-text-dim;
-  }
-
-  &:focus {
-    border-color: $nexus-cyan;
-    box-shadow: 0 0 0 2px $nexus-cyan-dim;
-  }
-
-  &:disabled {
-    opacity: 0.5;
-  }
-}
-
-.sendBtn {
-  background: linear-gradient(135deg, $nexus-cyan 0%, #00d4ff 100%);
-  border: none;
-  border-radius: 6px;
-  padding: 12px 16px;
-  color: $nexus-bg;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-
-  &:hover:not(:disabled) {
-    box-shadow: $nexus-glow;
-    transform: translateY(-1px);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-}
-
-// ========== Terminal Panel ==========
-.terminalPanel {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.terminalHeader {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 20px;
-  background: $nexus-bg-panel;
-  border-bottom: 1px solid $nexus-border;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 2px;
-  color: $nexus-cyan;
-  text-transform: uppercase;
-
-  svg {
-    width: 16px;
-    height: 16px;
-  }
-}
-
-.terminalTabs {
-  display: flex;
-  gap: 4px;
-  margin-left: auto;
-}
-
-.terminalTab {
+.exitBtn {
   background: transparent;
-  border: 1px solid $nexus-border;
-  color: $nexus-text-dim;
+  border: 1px solid $border;
+  color: $text-dim;
   padding: 4px 12px;
   font-size: 10px;
   font-family: inherit;
+  letter-spacing: 1px;
   cursor: pointer;
   transition: all 0.2s;
 
-  &:first-child {
-    border-radius: 4px 0 0 4px;
+  &:hover {
+    color: $red;
+    border-color: $red;
+  }
+}
+
+// ========== Grid Layout ==========
+.grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 2px;
+  padding: 2px;
+  background: $border;
+  z-index: 5;
+  overflow: hidden;
+}
+
+.maximizedPanel {
+  grid-column: 1 / -1;
+  grid-row: 1 / -1;
+}
+
+// ========== Panel ==========
+.panel {
+  background: $bg-panel;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+
+  &.minimized {
+    .panelContent { display: none; }
+    min-height: 36px;
+    flex: 0 0 auto;
   }
 
-  &:last-child {
-    border-radius: 0 4px 4px 0;
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: 1px solid transparent;
+    pointer-events: none;
+    transition: border-color 0.2s;
   }
+
+  &:hover::before {
+    border-color: $cyan-dim;
+  }
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: $bg-header;
+  border-bottom: 1px solid $border;
+  min-height: 32px;
+}
+
+.panelIcon {
+  color: $cyan;
+  display: flex;
+  align-items: center;
+}
+
+.panelTitle {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  color: $text-dim;
+  text-transform: uppercase;
+  flex: 1;
+}
+
+.panelTabs {
+  display: flex;
+  gap: 2px;
+  margin-right: 8px;
+}
+
+.tab {
+  background: transparent;
+  border: 1px solid $border;
+  color: $text-dim;
+  padding: 2px 8px;
+  font-size: 9px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:first-child { border-radius: 3px 0 0 3px; }
+  &:last-child { border-radius: 0 3px 3px 0; }
 
   &.active {
-    background: $nexus-cyan-dim;
-    border-color: $nexus-cyan;
-    color: $nexus-cyan;
-  }
-
-  &:hover:not(.active) {
-    border-color: $nexus-text-dim;
-    color: $nexus-text;
+    background: $cyan-dim;
+    border-color: $cyan;
+    color: $cyan;
   }
 }
 
-.connectionStatus {
-  font-size: 10px;
-  color: $nexus-red;
-  margin-left: 12px;
+.panelControls {
+  display: flex;
+  gap: 4px;
 
-  &.connected {
-    color: $nexus-green;
+  button {
+    background: transparent;
+    border: none;
+    color: $text-dim;
+    padding: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+    transition: all 0.15s;
+
+    &:hover {
+      background: $cyan-dim;
+      color: $cyan;
+    }
   }
 }
 
+.refreshBtn {
+  background: transparent;
+  border: none;
+  color: $text-dim;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 2px 6px;
+  margin-right: 8px;
+  transition: all 0.15s;
+
+  &:hover {
+    color: $cyan;
+    transform: rotate(180deg);
+  }
+}
+
+.panelContent {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+// ========== Terminal ==========
 .terminalContainer {
   flex: 1;
-  padding: 10px;
-  background: $nexus-bg;
-  overflow: hidden;
+  padding: 4px;
+  background: $bg-dark;
 
   :global(.xterm) {
     height: 100%;
   }
 
   :global(.xterm-viewport) {
-    &::-webkit-scrollbar {
-      width: 8px;
-    }
-
-    &::-webkit-scrollbar-track {
-      background: $nexus-bg;
-    }
-
+    &::-webkit-scrollbar { width: 6px; }
+    &::-webkit-scrollbar-track { background: transparent; }
     &::-webkit-scrollbar-thumb {
-      background: $nexus-border;
-      border-radius: 4px;
-
-      &:hover {
-        background: $nexus-cyan-dim;
-      }
+      background: $border;
+      border-radius: 3px;
     }
   }
 }
 
-// ========== Council Panel ==========
-.councilPanel {
-  flex: 1;
+// ========== GPU Status ==========
+.gpuGrid {
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  gap: 12px;
+  overflow-y: auto;
 }
 
-.councilHeader {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 20px;
-  background: $nexus-bg-panel;
-  border-bottom: 1px solid $nexus-border;
-  font-size: 12px;
+.gpuLoading {
+  color: $text-dim;
+  font-size: 11px;
+  text-align: center;
+  padding: 20px;
+}
+
+.gpuCard {
+  background: rgba(0, 212, 255, 0.05);
+  border: 1px solid rgba(0, 212, 255, 0.15);
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.gpuName {
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: 2px;
-  color: $nexus-purple;
-  text-transform: uppercase;
-
-  svg {
-    width: 16px;
-    height: 16px;
-  }
+  color: $blue;
+  margin-bottom: 10px;
+  letter-spacing: 0.5px;
 }
 
-.councilAgents {
+.gpuStats {
   display: flex;
-  justify-content: center;
-  gap: 20px;
-  padding: 16px;
-  background: $nexus-bg-panel;
-  border-bottom: 1px solid $nexus-border;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.agentBadge {
+.gpuStat {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 11px;
+}
+
+.gpuLabel {
+  font-size: 9px;
+  color: $text-dim;
+  width: 36px;
+  letter-spacing: 0.5px;
+}
+
+.gpuBar {
+  flex: 1;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.gpuBarFill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.gpuValue {
+  font-size: 10px;
+  color: $text;
+  width: 50px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.gpuTemp {
+  font-size: 12px;
+  font-weight: 600;
+  color: $green;
+
+  &.hot {
+    color: $red;
+    animation: pulse 1s ease-in-out infinite;
+  }
+}
+
+// ========== Three Minds ==========
+.councilAgents {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px;
+  border-bottom: 1px solid $border;
+}
+
+.agentCard {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 10px;
   font-weight: 600;
   border: 1px solid;
-  transition: all 0.3s;
+  transition: all 0.2s;
 
-  &.gpt {
-    background: rgba(0, 212, 255, 0.1);
-    border-color: #00d4ff;
-    color: #00d4ff;
+  &.openai {
+    background: rgba(16, 163, 127, 0.1);
+    border-color: rgba(16, 163, 127, 0.3);
+    color: #10a37f;
+
+    .modelLogo { color: #10a37f; }
   }
 
-  &.gemini {
-    background: rgba(0, 255, 136, 0.1);
-    border-color: $nexus-green;
-    color: $nexus-green;
+  &.google {
+    background: rgba(66, 133, 244, 0.1);
+    border-color: rgba(66, 133, 244, 0.3);
+    color: #4285f4;
+
+    .modelLogo { color: #4285f4; }
   }
 
-  &.claude {
-    background: rgba(189, 147, 249, 0.1);
-    border-color: $nexus-purple;
-    color: $nexus-purple;
+  &.anthropic {
+    background: rgba(204, 150, 96, 0.1);
+    border-color: rgba(204, 150, 96, 0.3);
+    color: #cc9660;
+
+    .modelLogo { color: #cc9660; }
   }
 }
 
-.agentIcon {
-  font-size: 16px;
+.modelLogo {
+  width: 14px;
+  height: 14px;
 }
 
-.councilMessages {
+.councilChat {
   flex: 1;
   overflow-y: auto;
-  padding: 20px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
+
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: $border; border-radius: 2px; }
 }
 
 .councilEmpty {
+  color: $text-dim;
+  font-size: 11px;
   text-align: center;
-  color: $nexus-text-dim;
-  padding: 40px;
-  font-size: 13px;
+  padding: 20px;
 }
 
 .councilMsg {
   display: flex;
-  gap: 12px;
-  padding: 12px;
-  background: $nexus-bg-panel;
-  border-radius: 8px;
-  border-left: 3px solid;
-  animation: slideIn 0.3s ease;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 6px;
+  border-left: 2px solid;
+  background: rgba(255, 255, 255, 0.02);
 
-  &.gpt {
-    border-color: #00d4ff;
+  &.openai {
+    border-color: #10a37f;
+    .councilMsgAgent .modelLogo { color: #10a37f; }
   }
-
-  &.gemini {
-    border-color: $nexus-green;
+  &.google {
+    border-color: #4285f4;
+    .councilMsgAgent .modelLogo { color: #4285f4; }
   }
-
-  &.claude {
-    border-color: $nexus-purple;
+  &.anthropic {
+    border-color: #cc9660;
+    .councilMsgAgent .modelLogo { color: #cc9660; }
   }
 }
 
-.councilAgent {
-  font-size: 20px;
+.councilMsgAgent {
+  display: flex;
+  align-items: center;
+  .modelLogo { width: 16px; height: 16px; }
 }
 
-.councilContent {
+.councilMsgText {
   flex: 1;
-  font-size: 13px;
-  line-height: 1.6;
+  font-size: 11px;
+  line-height: 1.5;
 }
 
 .councilInput {
   display: flex;
-  gap: 12px;
-  padding: 16px 20px;
-  background: $nexus-bg-panel;
-  border-top: 1px solid $nexus-border;
+  gap: 8px;
+  padding: 10px;
+  border-top: 1px solid $border;
+
+  input {
+    flex: 1;
+    background: $bg-dark;
+    border: 1px solid $border;
+    border-radius: 4px;
+    padding: 8px 12px;
+    color: $text;
+    font-family: inherit;
+    font-size: 11px;
+    outline: none;
+
+    &::placeholder { color: $text-dim; }
+    &:focus { border-color: $purple; }
+    &:disabled { opacity: 0.5; }
+  }
+
+  button {
+    background: linear-gradient(135deg, $purple, darken($purple, 10%));
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    color: white;
+    font-family: inherit;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover:not(:disabled) {
+      box-shadow: 0 0 20px rgba($purple, 0.4);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
 }
 
-.councilBtn {
-  background: linear-gradient(135deg, $nexus-purple 0%, #a855f7 100%);
-  border: none;
-  border-radius: 6px;
-  padding: 12px 20px;
-  color: white;
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
+// ========== Services ==========
+.serviceList {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 
-  &:hover:not(:disabled) {
-    box-shadow: 0 0 20px rgba(189, 147, 249, 0.5);
-    transform: translateY(-1px);
+.serviceItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 4px;
+  border: 1px solid $border;
+}
+
+.serviceStatus {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: $text-dim;
+
+  &.running {
+    background: $green;
+    box-shadow: 0 0 8px $green;
+    animation: pulse 2s ease-in-out infinite;
   }
 
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  &.stopped {
+    background: $red;
+  }
+
+  &.unknown {
+    background: $amber;
   }
 }
 
-// ========== Scrollbar ==========
-.messages,
-.councilMessages,
-.leftPanel {
-  &::-webkit-scrollbar {
-    width: 6px;
-  }
+.serviceName {
+  flex: 1;
+  font-size: 11px;
+  color: $text;
+}
 
-  &::-webkit-scrollbar-track {
+.serviceState {
+  font-size: 9px;
+  color: $text-dim;
+  letter-spacing: 0.5px;
+}
+
+.quickActions {
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+  border-top: 1px solid $border;
+
+  button {
+    flex: 1;
     background: transparent;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: $nexus-border;
-    border-radius: 3px;
+    border: 1px solid $border;
+    border-radius: 4px;
+    padding: 8px;
+    color: $text-dim;
+    font-family: inherit;
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
 
     &:hover {
-      background: $nexus-cyan-dim;
+      background: $cyan-dim;
+      border-color: $cyan;
+      color: $cyan;
     }
   }
 }
 
 // ========== Responsive ==========
-@media (max-width: 768px) {
-  .leftPanel {
-    width: 60px;
-    padding: 12px 8px;
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(4, 1fr);
+  }
 
-    .sectionTitle,
-    .statusLabel,
-    .statusValue,
-    .quickCmd,
-    .panelBtn span {
-      display: none;
-    }
-
-    .panelBtn {
-      justify-content: center;
-      padding: 12px;
-    }
+  .councilAgents {
+    flex-wrap: wrap;
   }
 }
