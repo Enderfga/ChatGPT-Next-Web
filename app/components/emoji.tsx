@@ -1,6 +1,9 @@
-import { Emoji, EmojiStyle } from "emoji-picker-react";
-
 import { ModelType } from "../store";
+
+// EmojiStyle 枚举值，与 emoji-picker-react 保持一致
+// 不再静态导入整个库（~300KB），只用 CDN 图片
+type EmojiStyle = "apple" | "google" | "twitter" | "facebook";
+const DEFAULT_EMOJI_STYLE: EmojiStyle = "apple";
 
 import BotIconDefault from "../icons/llm-icons/default.svg";
 import BotIconOpenAI from "../icons/llm-icons/openai.svg";
@@ -18,7 +21,10 @@ import BotIconHunyuan from "../icons/llm-icons/hunyuan.svg";
 import BotIconDoubao from "../icons/llm-icons/doubao.svg";
 import BotIconChatglm from "../icons/llm-icons/chatglm.svg";
 
-export function getEmojiUrl(unified: string, style: EmojiStyle) {
+export function getEmojiUrl(
+  unified: string,
+  style: EmojiStyle = DEFAULT_EMOJI_STYLE,
+) {
   // Whoever owns this Content Delivery Network (CDN), I am using your CDN to serve emojis
   // Old CDN broken, so I had to switch to this one
   // Author: https://github.com/H0llyW00dzZ
@@ -97,11 +103,14 @@ export function Avatar(props: { model?: ModelType; avatar?: string }) {
 }
 
 export function EmojiAvatar(props: { avatar: string; size?: number }) {
+  const size = props.size ?? 18;
   return (
-    <Emoji
-      unified={props.avatar}
-      size={props.size ?? 18}
-      getEmojiUrl={getEmojiUrl}
+    <img
+      src={getEmojiUrl(props.avatar, DEFAULT_EMOJI_STYLE)}
+      alt="emoji"
+      width={size}
+      height={size}
+      style={{ display: "inline-block", verticalAlign: "middle" }}
     />
   );
 }
