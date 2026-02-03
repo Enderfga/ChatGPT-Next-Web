@@ -31,8 +31,8 @@ export function Mermaid(props: { code: string }) {
 
   useEffect(() => {
     if (props.code && ref.current) {
-      import("mermaid").then((mermaid) => {
-        mermaid.run({
+      import("mermaid").then((mod) => {
+        mod.default.run({
           nodes: [ref.current!],
           suppressErrors: true,
         });
