@@ -32,7 +32,8 @@ import {
   Select,
   showConfirm,
 } from "./ui-lib";
-import { Avatar, AvatarPicker } from "./emoji";
+import { Avatar } from "./emoji";
+import { AvatarPicker } from "./avatar-picker";
 import Locale, { AllLangs, ALL_LANG_OPTIONS, Lang } from "../locales";
 import { useNavigate } from "react-router-dom";
 
