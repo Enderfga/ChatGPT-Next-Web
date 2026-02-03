@@ -41,12 +41,20 @@ const QUEUE_TTL = 5 * 60; // 5 分钟过期
 
 // GET: 轮询获取消息
 export async function GET(req: NextRequest) {
-  // 验证认证 - 需要 Bearer token 或 CF Access headers
+  // 验证认证
   const authHeader = req.headers.get("Authorization");
   const cfAccessId = req.headers.get("CF-Access-Client-Id");
   const expectedCode = process.env.CODE;
+  const referer = req.headers.get("Referer");
+  const origin = req.headers.get("Origin");
+  const host = req.headers.get("Host");
 
-  if (expectedCode) {
+  // 检查是否为同源请求（浏览器前端轮询）
+  const isSameOrigin =
+    (referer && host && referer.includes(host)) ||
+    (origin && host && origin.includes(host.split(":")[0]));
+
+  if (expectedCode && !isSameOrigin) {
     const token = authHeader?.replace("Bearer ", "");
     // 允许 Bearer token 或 CF Access Service Account
     if (token !== expectedCode && !cfAccessId) {

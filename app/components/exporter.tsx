@@ -31,8 +31,6 @@ import { Avatar } from "./emoji";
 import dynamic from "next/dynamic";
 import NextImage from "next/image";
 
-import { toBlob, toPng } from "html-to-image";
-
 import { prettyObject } from "../utils/format";
 import { EXPORT_MESSAGE_CLASS_NAME } from "../constant";
 import { getClientConfig } from "../config/client";
@@ -421,23 +419,25 @@ export function ImagePreviewer(props: {
     showToast(Locale.Export.Image.Toast);
     const dom = previewRef.current;
     if (!dom) return;
-    toBlob(dom).then((blob) => {
-      if (!blob) return;
-      try {
-        navigator.clipboard
-          .write([
-            new ClipboardItem({
-              "image/png": blob,
-            }),
-          ])
-          .then(() => {
-            showToast(Locale.Copy.Success);
-            refreshPreview();
-          });
-      } catch (e) {
-        console.error("[Copy Image] ", e);
-        showToast(Locale.Copy.Failed);
-      }
+    import("html-to-image").then(({ toBlob }) => {
+      toBlob(dom).then((blob) => {
+        if (!blob) return;
+        try {
+          navigator.clipboard
+            .write([
+              new ClipboardItem({
+                "image/png": blob,
+              }),
+            ])
+            .then(() => {
+              showToast(Locale.Copy.Success);
+              refreshPreview();
+            });
+        } catch (e) {
+          console.error("[Copy Image] ", e);
+          showToast(Locale.Copy.Failed);
+        }
+      });
     });
   };
 
@@ -451,6 +451,7 @@ export function ImagePreviewer(props: {
     const isApp = getClientConfig()?.isApp;
 
     try {
+      const { toPng } = await import("html-to-image");
       const blob = await toPng(dom);
       if (!blob) return;
 
