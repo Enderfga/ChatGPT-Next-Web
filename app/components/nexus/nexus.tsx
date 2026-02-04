@@ -690,7 +690,6 @@ export function Nexus() {
           >
             {isConnected ? "LIVE" : "OFFLINE"}
           </span>
-          <span className={styles.host}>{selectedHost}</span>
           <a
             href={commitUrl}
             target="_blank"
