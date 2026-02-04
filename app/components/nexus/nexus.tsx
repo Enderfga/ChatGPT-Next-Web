@@ -313,7 +313,8 @@ export function Nexus() {
         }
       } catch {}
       // Call original handler
-      if (originalOnMessage) originalOnMessage.call(wsRef.current, e);
+      if (originalOnMessage && wsRef.current)
+        originalOnMessage.call(wsRef.current, e);
     };
 
     // Send command to fetch GPU info
@@ -400,7 +401,8 @@ export function Nexus() {
           }
         }
       } catch {}
-      if (originalOnMessage) originalOnMessage.call(wsRef.current, e);
+      if (originalOnMessage && wsRef.current)
+        originalOnMessage.call(wsRef.current, e);
     };
 
     // Run three-minds locally
