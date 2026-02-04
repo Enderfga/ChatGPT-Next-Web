@@ -1,34 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { execSync } from "child_process";
-
-// Cache the gateway password (read once from openclaw config)
-let cachedGatewayPassword: string | null = null;
-
-function getGatewayPassword(): string {
-  if (cachedGatewayPassword !== null) return cachedGatewayPassword;
-
-  // Try environment variable first
-  if (process.env.OPENCLAW_GATEWAY_PASSWORD) {
-    cachedGatewayPassword = process.env.OPENCLAW_GATEWAY_PASSWORD;
-    return cachedGatewayPassword;
-  }
-
-  // Try to read from openclaw config
-  try {
-    const output = execSync("openclaw config get gateway.auth.password", {
-      encoding: "utf-8",
-      timeout: 5000,
-    }).trim();
-    // Output is the raw password string
-    cachedGatewayPassword = output.replace(/^["']|["']$/g, "") || "";
-    console.log("[Nexus Chat] Got gateway password from config");
-  } catch (e) {
-    console.log("[Nexus Chat] Failed to get gateway password:", e);
-    cachedGatewayPassword = "";
-  }
-
-  return cachedGatewayPassword;
-}
 
 // Nexus chat API - connects to openclaw gateway
 export async function POST(req: NextRequest) {
@@ -36,9 +6,8 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     // Determine gateway URL based on environment
-    const isLocal =
-      req.headers.get("host")?.includes("localhost") ||
-      req.headers.get("host")?.includes("127.0.0.1");
+    const host = req.headers.get("host") || "";
+    const isLocal = host.includes("localhost") || host.includes("127.0.0.1");
     const gatewayUrl = isLocal
       ? "http://localhost:18789/v1/chat/completions"
       : "https://api.enderfga.cn/gateway-api/v1/chat/completions";
@@ -48,8 +17,8 @@ export async function POST(req: NextRequest) {
     };
 
     if (isLocal) {
-      // Local: use gateway password
-      const password = getGatewayPassword();
+      // Local: use gateway password from env
+      const password = process.env.OPENCLAW_GATEWAY_PASSWORD || "";
       if (password) {
         headers["Authorization"] = `Bearer ${password}`;
       }
@@ -97,4 +66,4 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export const runtime = "nodejs";
+export const runtime = "edge";

@@ -26,6 +26,8 @@ $magenta: #d2a8ff;
   flex-direction: column;
   overflow: hidden;
   z-index: 9999;
+  user-select: text; // Enable text selection/copying
+  -webkit-user-select: text;
 }
 
 .gridOverlay {
