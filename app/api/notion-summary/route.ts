@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 const SASHA_DOCTOR_URL =
-  process.env.SASHA_DOCTOR_URL || "http://127.0.0.1:18795/sasha-doctor";
+  process.env.SASHA_DOCTOR_URL || "https://api.enderfga.cn/sasha-doctor";
 const ACCESS_CODE = process.env.CODE || "";
 
 export async function GET() {
