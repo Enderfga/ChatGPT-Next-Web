@@ -187,6 +187,34 @@ export function Nexus() {
     return () => clearInterval(timer);
   }, [setIntel]);
 
+  // ============ LOAD MAIL UNREAD COUNT ============
+
+  useEffect(() => {
+    const loadMail = async () => {
+      try {
+        const res = await fetch("/api/mail-unread", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.ok) {
+          setIntel((prev) => ({
+            ...prev,
+            mail: {
+              personal: data.personal || 0,
+              work: data.work || 0,
+              school: data.school || 0,
+            },
+          }));
+        }
+      } catch (e) {
+        console.error("[NEXUS] Failed to load mail data:", e);
+      }
+    };
+    loadMail();
+    // Refresh every 2 minutes
+    const timer = setInterval(loadMail, 2 * 60 * 1000);
+    return () => clearInterval(timer);
+  }, [setIntel]);
+
   const hostOptions = useMemo(() => {
     return sshHosts.length > 0 ? sshHosts : SSH_HOSTS_FALLBACK;
   }, [sshHosts]);
