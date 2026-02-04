@@ -1,34 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Read gateway password from openclaw config
-async function getGatewayPassword(): Promise<string> {
-  // Try env first
-  if (process.env.OPENCLAW_GATEWAY_PASSWORD) {
-    return process.env.OPENCLAW_GATEWAY_PASSWORD;
-  }
-
-  // Try reading from config file (local only)
-  try {
-    const fs = await import("fs");
-    const path = await import("path");
-    const configPath = path.join(
-      process.env.HOME || "/Users/fanggan",
-      ".openclaw",
-      "openclaw.json",
-    );
-    const configContent = fs.readFileSync(configPath, "utf8");
-    const config = JSON.parse(configContent);
-    if (config?.gateway?.password) {
-      console.log("[Nexus Chat] Got gateway password from config");
-      return config.gateway.password;
-    }
-  } catch (e) {
-    // Config file not available (e.g., on Vercel)
-  }
-
-  return "";
-}
-
 // Nexus chat API - connects to openclaw gateway with STREAMING
 export async function POST(req: NextRequest) {
   try {
@@ -47,9 +18,9 @@ export async function POST(req: NextRequest) {
       "Content-Type": "application/json",
     };
 
-    // Gateway auth - use password from env or config
+    // Gateway auth - use password from env (OPENCLAW_GATEWAY_PASSWORD or CODE)
     const gatewayPassword =
-      (await getGatewayPassword()) || process.env.CODE || "";
+      process.env.OPENCLAW_GATEWAY_PASSWORD || process.env.CODE || "";
     if (gatewayPassword) {
       headers["Authorization"] = `Bearer ${gatewayPassword}`;
     }
@@ -103,5 +74,5 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// Use nodejs runtime to allow fs access for local config
-export const runtime = "nodejs";
+// Edge runtime for better streaming support (longer timeout for active streams)
+export const runtime = "edge";
