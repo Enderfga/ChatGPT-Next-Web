@@ -96,13 +96,15 @@ export function Nexus() {
   const [showModelSelector, setShowModelSelector] = useState(false);
 
   const MODEL_OPTIONS = [
-    { title: "Gemini 3 Flash", value: "google/gemini-3-flash-preview" },
-    { title: "Azure GPT-4o", value: "azure/gpt-4o" },
+    { title: "Gemini 3 Pro", value: "gemini-3-pro-preview" },
+    { title: "Azure GPT-5.2", value: "azure/gpt-5.2-chat" },
     { title: "Claude 4.5 Opus", value: "anthropic/claude-opus-4-5" },
   ];
 
   const getModelDisplayName = (model: string) => {
-    if (model.includes("gemini")) return "Gemini 3";
+    if (model.includes("gemini-3-pro")) return "Gemini 3 Pro";
+    if (model.includes("gemini")) return "Gemini";
+    if (model.includes("gpt-5")) return "GPT-5.2";
     if (model.includes("gpt-4o")) return "GPT-4o";
     if (model.includes("opus")) return "Opus 4.5";
     return model;

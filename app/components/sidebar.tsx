@@ -304,13 +304,15 @@ export function SideBar(props: { className?: string }) {
   const isOpenclawSelected = currentModel.toLowerCase().includes("opus-4-5");
 
   const MODEL_OPTIONS = [
-    { title: "Gemini 3 Flash", value: "google/gemini-3-flash-preview" },
-    { title: "Azure GPT-4o", value: "azure/gpt-4o" },
+    { title: "Gemini 3 Pro", value: "gemini-3-pro-preview" },
+    { title: "Azure GPT-5.2", value: "azure/gpt-5.2-chat" },
     { title: "Claude 4.5 Opus", value: "anthropic/claude-opus-4-5" },
   ];
 
   const getModelName = (model: string) => {
-    if (model.includes("gemini")) return "Gemini 3 Flash";
+    if (model.includes("gemini-3-pro")) return "Gemini 3 Pro";
+    if (model.includes("gemini")) return "Gemini";
+    if (model.includes("gpt-5")) return "GPT-5.2 (Azure)";
     if (model.includes("gpt-4o")) return "GPT-4o (Azure)";
     if (model.includes("opus") || model.includes("claude-4.5"))
       return "Claude 4.5 Opus";
