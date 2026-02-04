@@ -67,8 +67,14 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    console.log("[Nexus Chat] isLocal:", isLocal);
     console.log("[Nexus Chat] Calling:", gatewayUrl);
     console.log("[Nexus Chat] Model:", body.model);
+    console.log(
+      "[Nexus Chat] Has CF headers:",
+      !!headers["CF-Access-Client-Id"],
+    );
+    console.log("[Nexus Chat] Has Auth:", !!headers["Authorization"]);
 
     const res = await fetch(gatewayUrl, {
       method: "POST",

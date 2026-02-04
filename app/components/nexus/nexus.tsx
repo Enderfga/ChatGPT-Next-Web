@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./nexus.module.scss";
-import { ACCESS_CODE_PREFIX, ApiPath, Path } from "../../constant";
+import { Path } from "../../constant";
 import { useAccessStore } from "../../store";
 import "xterm/css/xterm.css";
 
@@ -136,8 +136,8 @@ export function Nexus() {
       : "wss://api.enderfga.cn/sasha-doctor/terminal";
   }, []);
 
-  // Use same API path as default chat (already works!)
-  const chatApiUrl = `${ApiPath.OpenAI}/v1/chat/completions`;
+  // Use nexus-chat API which connects to openclaw gateway (not OpenAI!)
+  const chatApiUrl = "/api/nexus-chat";
 
   // ============ LOAD SSH HOSTS ============
 
@@ -302,16 +302,10 @@ export function Nexus() {
     setChatLoading(true);
 
     try {
-      // Simple auth headers (same format as default chat uses)
-      const authToken = accessStore.accessCode
-        ? `${ACCESS_CODE_PREFIX}${accessStore.accessCode}`
-        : "";
+      console.log("[Nexus] Calling:", chatApiUrl);
       const res = await fetch(chatApiUrl, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model:
             gatewayModel !== "-" ? gatewayModel : "anthropic/claude-opus-4-5",
@@ -323,7 +317,11 @@ export function Nexus() {
         }),
       });
 
-      if (!res.ok) throw new Error(`API error: ${res.status}`);
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error("[Nexus Chat] Error:", res.status, errText);
+        throw new Error(`${res.status}: ${errText.slice(0, 200)}`);
+      }
       const data = await res.json();
       const assistantContent =
         data.choices?.[0]?.message?.content || "No response";
