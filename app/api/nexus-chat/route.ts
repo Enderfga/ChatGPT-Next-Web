@@ -1,5 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// Read gateway password from openclaw config
+async function getGatewayPassword(): Promise<string> {
+  // Try env first
+  if (process.env.OPENCLAW_GATEWAY_PASSWORD) {
+    return process.env.OPENCLAW_GATEWAY_PASSWORD;
+  }
+
+  // Try reading from config file (local only)
+  try {
+    const fs = await import("fs");
+    const path = await import("path");
+    const configPath = path.join(
+      process.env.HOME || "/Users/fanggan",
+      ".openclaw",
+      "openclaw.json",
+    );
+    const configContent = fs.readFileSync(configPath, "utf8");
+    const config = JSON.parse(configContent);
+    if (config?.gateway?.password) {
+      console.log("[Nexus Chat] Got gateway password from config");
+      return config.gateway.password;
+    }
+  } catch (e) {
+    // Config file not available (e.g., on Vercel)
+  }
+
+  return "";
+}
+
 // Nexus chat API - connects to openclaw gateway
 export async function POST(req: NextRequest) {
   try {
@@ -18,8 +47,8 @@ export async function POST(req: NextRequest) {
     };
 
     if (isLocal) {
-      // Local: use gateway password from env
-      const password = process.env.OPENCLAW_GATEWAY_PASSWORD || "";
+      // Local: use gateway password from env or config
+      const password = await getGatewayPassword();
       if (password) {
         headers["Authorization"] = `Bearer ${password}`;
       }
@@ -67,4 +96,5 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export const runtime = "edge";
+// Use nodejs runtime to allow fs access for local config
+export const runtime = "nodejs";
