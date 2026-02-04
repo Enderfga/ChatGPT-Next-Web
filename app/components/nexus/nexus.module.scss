@@ -63,7 +63,7 @@ $magenta: #d2a8ff;
 .logo {
   width: 32px;
   height: 32px;
-  filter: drop-shadow(0 0 8px rgba(230, 180, 80, 0.3));
+  filter: drop-shadow(0 0 8px rgba(230, 180, 80, 0.3)) !important;
 }
 
 .brandInfo {
