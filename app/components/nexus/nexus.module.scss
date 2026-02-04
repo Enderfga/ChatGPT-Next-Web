@@ -185,6 +185,56 @@ $magenta: #d2a8ff;
   background: rgba(230, 180, 80, 0.1);
 }
 
+// Agent Status Bar
+.agentStatus {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid $border;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+}
+
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: $text-dim;
+  transition: all 0.3s;
+
+  &.idle {
+    background: $green;
+    box-shadow: 0 0 6px rgba(126, 231, 135, 0.5);
+  }
+
+  &.working {
+    background: $accent;
+    box-shadow: 0 0 8px rgba(230, 180, 80, 0.6);
+    animation: pulse 1s ease-in-out infinite;
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.statusText {
+  color: $text-muted;
+}
+
+.toolName {
+  color: $cyan;
+  font-weight: 500;
+}
+
 .chatMessages {
   flex: 1;
   overflow-y: auto;

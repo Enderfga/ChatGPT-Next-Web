@@ -110,6 +110,13 @@ export function Nexus() {
   const [chatLoading, setChatLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
+  // Agent status state
+  const [agentStatus, setAgentStatus] = useState<{
+    state: string;
+    activity: string;
+    currentTool: string | null;
+  }>({ state: "idle", activity: "Ready", currentTool: null });
+
   // Terminal refs
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<any>(null);
@@ -384,8 +391,12 @@ export function Nexus() {
       if (orig && wsRef.current) orig.call(wsRef.current, e);
     };
 
+    // Ensure correct case for GMI hosts (SSH config is case-sensitive)
+    const sshHost = selectedHost.toUpperCase().startsWith("GMI")
+      ? selectedHost.toUpperCase()
+      : selectedHost;
     sendCmd(
-      `echo __GPU_START__ && ssh ${selectedHost} "nvidia-smi --query-gpu=name,utilization.gpu,memory.used,memory.total,temperature.gpu --format=csv,noheader,nounits 2>/dev/null" && echo __GPU_END__`,
+      `echo __GPU_START__ && ssh ${sshHost} "nvidia-smi --query-gpu=name,utilization.gpu,memory.used,memory.total,temperature.gpu --format=csv,noheader,nounits 2>/dev/null" && echo __GPU_END__`,
     );
     setTimeout(() => {
       if (wsRef.current && wsRef.current.onmessage !== orig)
@@ -418,6 +429,33 @@ export function Nexus() {
     };
     check();
     const t = setInterval(check, 15000);
+    return () => clearInterval(t);
+  }, []);
+
+  // ============ AGENT STATUS ============
+
+  useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        const isLocal =
+          typeof window !== "undefined" &&
+          ["localhost", "127.0.0.1"].includes(window.location.hostname);
+        const statusUrl = isLocal
+          ? "http://localhost:18795/sasha-doctor/status"
+          : "https://api.enderfga.cn/sasha-doctor/status";
+        const res = await fetch(statusUrl, { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          setAgentStatus({
+            state: data.state || "idle",
+            activity: data.activity || "Ready",
+            currentTool: data.currentTool || null,
+          });
+        }
+      } catch {}
+    };
+    fetchStatus();
+    const t = setInterval(fetchStatus, 2000);
     return () => clearInterval(t);
   }, []);
 
@@ -488,7 +526,7 @@ export function Nexus() {
           <OpenClawLogo className={styles.logo} />
           <div className={styles.brandInfo}>
             <h1>NEXUS</h1>
-            <span>{gatewayModel !== "-" ? gatewayModel : "CONSOLE"}</span>
+            <span>CONSOLE</span>
           </div>
         </div>
         <div className={styles.headerMeta}>
@@ -524,6 +562,23 @@ export function Nexus() {
               {gatewayModel !== "-" ? gatewayModel : "claude-opus-4-5"}
             </span>
           </header>
+          {/* Agent Status Bar */}
+          <div className={styles.agentStatus}>
+            <span
+              className={`${styles.statusDot} ${
+                agentStatus.state === "working" ? styles.working : styles.idle
+              }`}
+            />
+            <span className={styles.statusText}>
+              {agentStatus.activity}
+              {agentStatus.currentTool && (
+                <span className={styles.toolName}>
+                  {" "}
+                  → {agentStatus.currentTool}
+                </span>
+              )}
+            </span>
+          </div>
           <div className={styles.chatMessages}>
             {chatMessages.length === 0 && (
               <div className={styles.chatEmpty}>
