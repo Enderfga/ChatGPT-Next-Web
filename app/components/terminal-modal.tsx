@@ -90,6 +90,16 @@ function TerminalModalInner({ isOpen, onClose }: TerminalModalProps) {
       term.writeln("\x1b[90mConnecting to server...\x1b[0m");
     }
 
+    // Cleanup previous connection resources before reconnecting
+    if (cleanupRef.current) {
+      cleanupRef.current();
+      cleanupRef.current = null;
+    }
+    if (wsRef.current && wsRef.current.readyState !== WebSocket.CLOSED) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+
     // Connect WebSocket
     const term = termRef.current;
     const fitAddon = fitAddonRef.current;
@@ -159,8 +169,11 @@ function TerminalModalInner({ isOpen, onClose }: TerminalModalProps) {
             setError(null);
             term.writeln("\x1b[32m✓ Connected!\x1b[0m");
             term.writeln("");
-            // Fit after ready
-            requestAnimationFrame(() => fitAddon.fit());
+            // Fit and focus after ready (critical for reconnection!)
+            requestAnimationFrame(() => {
+              fitAddon.fit();
+              term.focus();
+            });
             break;
           case "exit":
             term.writeln(
