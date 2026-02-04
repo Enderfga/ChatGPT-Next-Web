@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 import styles from "./nexus.module.scss";
 import { Path } from "../../constant";
 import { useAccessStore } from "../../store";
-import { fetchEventSource } from "@fortaine/fetch-event-source";
 import "xterm/css/xterm.css";
 
 import OpenClawLogo from "../../icons/openclaw.svg";
@@ -313,7 +312,7 @@ export function Nexus() {
     try {
       console.log("[Nexus] Calling:", chatApiUrl);
 
-      await fetchEventSource(chatApiUrl, {
+      const res = await fetch(chatApiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -325,42 +324,65 @@ export function Nexus() {
           })),
           max_tokens: 4096,
         }),
-        onmessage(msg) {
-          if (msg.data === "[DONE]") return;
-          try {
-            const parsed = JSON.parse(msg.data);
-            const delta = parsed.choices?.[0]?.delta?.content || "";
-            if (delta) {
-              assistantContent += delta;
-              setChatMessages((prev) => {
-                const updated = [...prev];
-                updated[updated.length - 1] = {
-                  role: "assistant",
-                  content: assistantContent + "▌",
-                  timestamp: Date.now(),
-                };
-                return updated;
-              });
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`${res.status}: ${errText.slice(0, 200)}`);
+      }
+
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("No response body");
+
+      const decoder = new TextDecoder();
+      let buffer = ""; // Buffer for incomplete lines
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        // Process complete lines
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || ""; // Keep incomplete line in buffer
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const data = line.slice(6).trim();
+            if (data === "[DONE]") continue;
+            if (!data) continue;
+            try {
+              const parsed = JSON.parse(data);
+              const delta = parsed.choices?.[0]?.delta?.content || "";
+              if (delta) {
+                assistantContent += delta;
+                setChatMessages((prev) => {
+                  const updated = [...prev];
+                  updated[updated.length - 1] = {
+                    role: "assistant",
+                    content: assistantContent + "▌",
+                    timestamp: Date.now(),
+                  };
+                  return updated;
+                });
+              }
+            } catch {
+              // Skip invalid JSON
             }
-          } catch {
-            // Skip invalid JSON
           }
-        },
-        onclose() {
-          // Final update without cursor
-          setChatMessages((prev) => {
-            const updated = [...prev];
-            updated[updated.length - 1] = {
-              role: "assistant",
-              content: assistantContent || "No response",
-              timestamp: Date.now(),
-            };
-            return updated;
-          });
-        },
-        onerror(err) {
-          throw err;
-        },
+        }
+      }
+
+      // Final update without cursor
+      setChatMessages((prev) => {
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          role: "assistant",
+          content: assistantContent || "No response",
+          timestamp: Date.now(),
+        };
+        return updated;
       });
     } catch (err: any) {
       // Update the placeholder message with error
