@@ -29,7 +29,7 @@ async function getGatewayPassword(): Promise<string> {
   return "";
 }
 
-// Nexus chat API - connects to openclaw gateway
+// Nexus chat API - connects to openclaw gateway with STREAMING
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -39,7 +39,6 @@ export async function POST(req: NextRequest) {
     const isLocal = host.includes("localhost") || host.includes("127.0.0.1");
 
     // Both local and remote: call gateway directly (default cloudflare route)
-    // Local: localhost:18789, Remote: api.enderfga.cn (default route goes to gateway)
     const gatewayUrl = isLocal
       ? "http://localhost:18789/v1/chat/completions"
       : "https://api.enderfga.cn/v1/chat/completions";
@@ -68,16 +67,14 @@ export async function POST(req: NextRequest) {
     console.log("[Nexus Chat] isLocal:", isLocal);
     console.log("[Nexus Chat] Calling:", gatewayUrl);
     console.log("[Nexus Chat] Model:", body.model);
-    console.log(
-      "[Nexus Chat] Has CF headers:",
-      !!headers["CF-Access-Client-Id"],
-    );
-    console.log("[Nexus Chat] Has Auth:", !!headers["Authorization"]);
+
+    // Force streaming to avoid Vercel timeout
+    const requestBody = { ...body, stream: true };
 
     const res = await fetch(gatewayUrl, {
       method: "POST",
       headers,
-      body: JSON.stringify(body),
+      body: JSON.stringify(requestBody),
     });
 
     if (!res.ok) {
@@ -89,8 +86,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const data = await res.json();
-    return NextResponse.json(data);
+    // Stream the response back
+    return new Response(res.body, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
+    });
   } catch (err: any) {
     console.error("[Nexus Chat] Exception:", err);
     return NextResponse.json(

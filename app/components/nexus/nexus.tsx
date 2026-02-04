@@ -322,14 +322,64 @@ export function Nexus() {
         console.error("[Nexus Chat] Error:", res.status, errText);
         throw new Error(`${res.status}: ${errText.slice(0, 200)}`);
       }
-      const data = await res.json();
-      const assistantContent =
-        data.choices?.[0]?.message?.content || "No response";
 
+      // Handle streaming response
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("No response body");
+
+      const decoder = new TextDecoder();
+      let assistantContent = "";
+
+      // Add placeholder message for streaming
       setChatMessages((prev) => [
         ...prev,
-        { role: "assistant", content: assistantContent, timestamp: Date.now() },
+        { role: "assistant", content: "▌", timestamp: Date.now() },
       ]);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n");
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const data = line.slice(6);
+            if (data === "[DONE]") continue;
+            try {
+              const parsed = JSON.parse(data);
+              const delta = parsed.choices?.[0]?.delta?.content || "";
+              if (delta) {
+                assistantContent += delta;
+                // Update message in real-time
+                setChatMessages((prev) => {
+                  const updated = [...prev];
+                  updated[updated.length - 1] = {
+                    role: "assistant",
+                    content: assistantContent + "▌",
+                    timestamp: Date.now(),
+                  };
+                  return updated;
+                });
+              }
+            } catch {
+              // Skip invalid JSON
+            }
+          }
+        }
+      }
+
+      // Final update without cursor
+      setChatMessages((prev) => {
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          role: "assistant",
+          content: assistantContent || "No response",
+          timestamp: Date.now(),
+        };
+        return updated;
+      });
     } catch (err: any) {
       setChatMessages((prev) => [
         ...prev,
