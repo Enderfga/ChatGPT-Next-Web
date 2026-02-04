@@ -140,6 +140,10 @@ export function Nexus() {
   const fitAddonRef = useRef<any>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const terminalCleanupRef = useRef<(() => void) | null>(null);
+  const reconnectAttemptRef = useRef(0);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const maxReconnectAttempts = 10;
+  const [isReconnecting, setIsReconnecting] = useState(false);
 
   // ============ WEBSOCKET URL ============
 
@@ -295,6 +299,8 @@ export function Nexus() {
         const msg = JSON.parse(e.data);
         if (msg.type === "ready") {
           setIsConnected(true);
+          setIsReconnecting(false);
+          reconnectAttemptRef.current = 0; // Reset on successful connection
           terminal.writeln("\x1b[32m● Connected\x1b[0m\n");
           ws.send(
             JSON.stringify({
@@ -317,7 +323,52 @@ export function Nexus() {
 
     ws.onclose = () => {
       setIsConnected(false);
-      terminal.writeln("\n\x1b[31m● Disconnected\x1b[0m");
+
+      // Auto-reconnect logic
+      if (reconnectAttemptRef.current < maxReconnectAttempts) {
+        reconnectAttemptRef.current++;
+        const delay = Math.min(
+          1000 * Math.pow(2, reconnectAttemptRef.current - 1),
+          30000,
+        ); // Exponential backoff, max 30s
+        terminal.writeln(
+          `\n\x1b[33m● Disconnected. Reconnecting in ${delay / 1000}s... (${
+            reconnectAttemptRef.current
+          }/${maxReconnectAttempts})\x1b[0m`,
+        );
+        setIsReconnecting(true);
+
+        reconnectTimeoutRef.current = setTimeout(() => {
+          if (
+            wsRef.current?.readyState === WebSocket.CLOSED ||
+            !wsRef.current
+          ) {
+            terminal.writeln("\x1b[90mReconnecting...\x1b[0m");
+
+            const newWs = new WebSocket(wsUrl);
+            wsRef.current = newWs;
+
+            newWs.onopen = () => {
+              const token = accessStore.accessCode;
+              if (token) newWs.send(JSON.stringify({ type: "auth", token }));
+            };
+
+            newWs.onmessage = ws.onmessage;
+            newWs.onclose = ws.onclose;
+            newWs.onerror = ws.onerror;
+          }
+        }, delay);
+      } else {
+        terminal.writeln(
+          "\n\x1b[31m● Disconnected. Max reconnect attempts reached.\x1b[0m",
+        );
+        terminal.writeln("\x1b[90mRefresh page to reconnect.\x1b[0m");
+        setIsReconnecting(false);
+      }
+    };
+
+    ws.onerror = () => {
+      // Error will trigger onclose, no action needed here
     };
 
     terminal.onData((data: string) => {
@@ -341,6 +392,11 @@ export function Nexus() {
     resizeObserver.observe(terminalRef.current);
 
     terminalCleanupRef.current = () => {
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+      reconnectAttemptRef.current = maxReconnectAttempts; // Prevent reconnect during cleanup
       resizeObserver.disconnect();
       ws.close();
       terminal.dispose();
@@ -688,9 +744,15 @@ export function Nexus() {
         </div>
         <div className={styles.headerMeta}>
           <span
-            className={`${styles.status} ${isConnected ? styles.live : ""}`}
+            className={`${styles.status} ${isConnected ? styles.live : ""} ${
+              isReconnecting ? styles.reconnecting : ""
+            }`}
           >
-            {isConnected ? "LIVE" : "OFFLINE"}
+            {isConnected
+              ? "LIVE"
+              : isReconnecting
+              ? "RECONNECTING..."
+              : "OFFLINE"}
           </span>
           <a
             href={commitUrl}

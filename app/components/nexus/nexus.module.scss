@@ -99,6 +99,16 @@ $magenta: #d2a8ff;
     color: $green;
     &::before { content: "● "; }
   }
+  &.reconnecting {
+    color: $yellow;
+    animation: blink 1s infinite;
+    &::before { content: "◐ "; }
+  }
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.5; }
 }
 
 .host {
