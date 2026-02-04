@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./nexus.module.scss";
-import { Path } from "../../constant";
+import { ApiPath, Path } from "../../constant";
 import { useAccessStore } from "../../store";
+import { getHeaders } from "../../client/api";
 import "xterm/css/xterm.css";
 
 import OpenClawLogo from "../../icons/openclaw.svg";
@@ -136,8 +137,8 @@ export function Nexus() {
       : "wss://api.enderfga.cn/sasha-doctor/terminal";
   }, []);
 
-  // Dedicated Nexus chat API (connects to openclaw gateway)
-  const chatApiUrl = "/api/nexus-chat";
+  // Use same API path as default chat (already works!)
+  const chatApiUrl = `${ApiPath.OpenAI}/v1/chat/completions`;
 
   // ============ LOAD SSH HOSTS ============
 
@@ -302,12 +303,11 @@ export function Nexus() {
     setChatLoading(true);
 
     try {
+      // Use same headers as default chat (includes auth)
+      const headers = getHeaders();
       const res = await fetch(chatApiUrl, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessStore.accessCode || "nk-"}`,
-        },
+        headers,
         body: JSON.stringify({
           model:
             gatewayModel !== "-" ? gatewayModel : "anthropic/claude-opus-4-5",
