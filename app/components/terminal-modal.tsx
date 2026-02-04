@@ -112,17 +112,20 @@ function TerminalModalInner({ isOpen, onClose }: TerminalModalProps) {
 
     console.log("[Terminal] Connecting to:", wsUrl);
 
-    // 先通过 fetch 触发 Cloudflare Access 认证，获取 cookie
-    // 然后 WebSocket 会自动携带同域的 cookie
+    // 先通过 fetch 检查 sasha-doctor 是否可达
+    // 使用 /terminal/mail-unread 因为它在 Cloudflare bypass 列表里
     try {
-      await fetch(
+      const healthRes = await fetch(
         `${
           protocol === "wss:" ? "https:" : "http:"
-        }//${host}/sasha-doctor/health`,
+        }//${host}/sasha-doctor/terminal/mail-unread`,
         {
           credentials: "include",
         },
       );
+      if (!healthRes.ok) {
+        console.log("[Terminal] Health check failed:", healthRes.status);
+      }
     } catch (e) {
       console.log("[Terminal] Health check for cookie:", e);
     }
