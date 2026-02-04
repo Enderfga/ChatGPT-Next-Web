@@ -129,13 +129,8 @@ export function Nexus() {
       : "wss://api.enderfga.cn/sasha-doctor/terminal";
   }, []);
 
-  const apiBase = useMemo(() => {
-    if (typeof window === "undefined") return "";
-    const isLocal = ["localhost", "127.0.0.1"].includes(
-      window.location.hostname,
-    );
-    return isLocal ? "http://localhost:18789" : "https://api.enderfga.cn";
-  }, []);
+  // Dedicated Nexus chat API (connects to openclaw gateway)
+  const chatApiUrl = "/api/nexus-chat";
 
   // ============ LOAD SSH HOSTS ============
 
@@ -300,11 +295,11 @@ export function Nexus() {
     setChatLoading(true);
 
     try {
-      const res = await fetch(`${apiBase}/v1/chat/completions`, {
+      const res = await fetch(chatApiUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${accessStore.accessCode}`,
+          Authorization: `Bearer ${accessStore.accessCode || "nk-"}`,
         },
         body: JSON.stringify({
           model:
@@ -642,7 +637,6 @@ export function Nexus() {
                   {hostOptions.map((h) => (
                     <option key={h.name} value={h.name}>
                       {h.name}
-                      {h.hostname ? ` (${h.hostname})` : ""}
                     </option>
                   ))}
                 </select>
