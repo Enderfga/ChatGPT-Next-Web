@@ -132,14 +132,24 @@ async function handle(req: NextRequest) {
       }
     }
 
-    // GET: Health check - 直接从 sasha-doctor 获取完整状态
-    const res = await fetch(`${doctorApiUrl}/gateway-status`, {
-      headers,
-      cache: "no-store",
-    });
+    // GET: Health check - 从 sasha-doctor 获取完整状态
+    const [gatewayRes, servicesRes] = await Promise.all([
+      fetch(`${doctorApiUrl}/gateway-status`, { headers, cache: "no-store" }),
+      fetch(`${doctorApiUrl}/services`, { headers, cache: "no-store" }),
+    ]);
 
-    if (res.ok) {
-      const status = await res.json();
+    if (gatewayRes.ok) {
+      const status = await gatewayRes.json();
+
+      // Parse services status for cloudflared
+      let cloudflaredOk = false;
+      let servicesData = null;
+      if (servicesRes.ok) {
+        servicesData = await servicesRes.json();
+        const cf = servicesData?.services?.cloudflared;
+        cloudflaredOk = cf?.running && cf?.tunnelHealthy;
+      }
+
       return NextResponse.json({
         status: status.ok ? "online" : "degraded",
         adminUrl,
@@ -147,6 +157,8 @@ async function handle(req: NextRequest) {
         whatsappLinked: status.channels?.whatsapp?.linked ?? false,
         whatsappConnected: status.channels?.whatsapp?.connected ?? false,
         sessionCount: status.sessions?.count ?? 0,
+        cloudflaredOk,
+        services: servicesData,
       });
     }
 

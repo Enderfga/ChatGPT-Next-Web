@@ -582,6 +582,8 @@ export function Nexus() {
                 }
               : s.name === "sasha-doctor"
               ? { ...s, status: "running" }
+              : s.name === "cloudflared"
+              ? { ...s, status: data.cloudflaredOk ? "running" : "stopped" }
               : s,
           ),
         );
