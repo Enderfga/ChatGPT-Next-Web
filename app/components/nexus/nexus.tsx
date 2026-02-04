@@ -813,13 +813,13 @@ export function Nexus() {
                 {financeLoading && <span style={{ opacity: 0.5 }}>⏳</span>}
               </h4>
               <div className={styles.metric}>
-                <span>💰 Accounts</span>
+                <span>Accounts</span>
                 <strong style={{ color: "#3fb950" }}>
                   ${intel.accountsTotal.toLocaleString()}
                 </strong>
               </div>
               <div className={styles.metric}>
-                <span>💳 Credit ({intel.activeCards} cards)</span>
+                <span>Credit ({intel.activeCards} cards)</span>
                 <strong>${intel.creditLimitSgd.toLocaleString()}</strong>
               </div>
             </div>

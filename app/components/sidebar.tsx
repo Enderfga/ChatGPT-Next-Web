@@ -15,7 +15,6 @@ import BookIcon from "../icons/book.svg";
 import NexusIcon from "../icons/nexus.svg";
 
 import { TerminalModal } from "./terminal-modal";
-import { FinanceBadge } from "./finance-badge";
 
 import Locale from "../locales";
 
@@ -283,7 +282,6 @@ export function SideBarTail(props: {
           }}
         />
         <CommitBadge />
-        <FinanceBadge />
       </div>
     </div>
   );
