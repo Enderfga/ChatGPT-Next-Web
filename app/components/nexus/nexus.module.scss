@@ -100,7 +100,7 @@ $magenta: #d2a8ff;
     &::before { content: "● "; }
   }
   &.reconnecting {
-    color: $yellow;
+    color: $accent;
     animation: blink 1s infinite;
     &::before { content: "◐ "; }
   }
