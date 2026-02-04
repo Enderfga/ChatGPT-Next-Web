@@ -304,10 +304,6 @@ export function Nexus() {
           setIsReconnecting(false);
           reconnectAttemptRef.current = 0; // Reset on successful connection
           terminal.writeln("\x1b[32m● Connected\x1b[0m\n");
-          console.log(
-            "[Terminal] Ready! wsRef.current:",
-            wsRef.current?.readyState,
-          );
           // Use wsRef.current for reconnection support
           wsRef.current?.send(
             JSON.stringify({
@@ -386,12 +382,6 @@ export function Nexus() {
 
     // IMPORTANT: Use wsRef.current instead of ws to support reconnection
     terminal.onData((data: string) => {
-      console.log(
-        "[Terminal] onData:",
-        data,
-        "wsRef.current:",
-        wsRef.current?.readyState,
-      );
       if (wsRef.current?.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify({ type: "input", data }));
       }
