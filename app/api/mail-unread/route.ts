@@ -24,7 +24,7 @@ export async function GET() {
       const SASHA_DOCTOR_URL = "https://api.enderfga.cn/sasha-doctor";
       const ACCESS_CODE = process.env.CODE || "";
 
-      const response = await fetch(`${SASHA_DOCTOR_URL}/mail/unread`, {
+      const response = await fetch(`${SASHA_DOCTOR_URL}/terminal/mail-unread`, {
         headers: { Authorization: `Bearer ${ACCESS_CODE}` },
         signal: AbortSignal.timeout(5000),
       });
