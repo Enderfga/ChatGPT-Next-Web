@@ -8,9 +8,10 @@ export async function POST(req: NextRequest) {
     // Determine gateway URL based on environment
     const host = req.headers.get("host") || "";
     const isLocal = host.includes("localhost") || host.includes("127.0.0.1");
+    // Local: direct to gateway, Remote: through cloudflare tunnel (default route)
     const gatewayUrl = isLocal
       ? "http://localhost:18789/v1/chat/completions"
-      : "https://api.enderfga.cn/gateway-api/v1/chat/completions";
+      : "https://api.enderfga.cn/v1/chat/completions";
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
