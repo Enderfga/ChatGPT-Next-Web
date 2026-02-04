@@ -445,7 +445,7 @@ $magenta: #d2a8ff;
 .modelBadges {
   display: flex;
   gap: 6px;
-  svg { width: 16px; height: 16px; opacity: 0.7; }
+  svg { width: 16px; height: 16px; opacity: 0.7; filter: none !important; }
 }
 
 .councilContent {
