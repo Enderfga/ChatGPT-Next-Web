@@ -460,7 +460,7 @@ export function Nexus() {
 
     const escaped = councilTopic.replace(/'/g, "'\"'\"'");
     sendCmd(
-      `echo __COUNCIL_START__ && three-minds '${escaped}' --quiet 2>&1; echo __COUNCIL_END__`,
+      `echo __COUNCIL_START__ && three-minds '${escaped}' --max-rounds 3 2>&1; echo __COUNCIL_END__`,
     );
     setTimeout(() => {
       if (councilRunning) {
