@@ -93,6 +93,20 @@ export function Nexus() {
     { name: "cloudflared", status: "unknown" },
   ]);
   const [gatewayModel, setGatewayModel] = useState("-");
+  const [showModelSelector, setShowModelSelector] = useState(false);
+
+  const MODEL_OPTIONS = [
+    { title: "Gemini 3 Flash", value: "google/gemini-3-flash-preview" },
+    { title: "Azure GPT-4o", value: "azure/gpt-4o" },
+    { title: "Claude 4.5 Opus", value: "anthropic/claude-opus-4-5" },
+  ];
+
+  const getModelDisplayName = (model: string) => {
+    if (model.includes("gemini")) return "Gemini 3";
+    if (model.includes("gpt-4o")) return "GPT-4o";
+    if (model.includes("opus")) return "Opus 4.5";
+    return model;
+  };
   const [intel, setIntel] = useLocalStorageState<IntelState>("nexus-intel", {
     accountsTotal: 0,
     creditLimitSgd: 0,
@@ -464,6 +478,34 @@ export function Nexus() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages]);
 
+  // ============ MODEL SWITCHING ============
+
+  const handleModelChange = async (newModel: string) => {
+    if (newModel === gatewayModel) return;
+    if (
+      !confirm(
+        `切换主模型为 ${getModelDisplayName(
+          newModel,
+        )}？\n\n后端服务会立即重启。`,
+      )
+    )
+      return;
+
+    try {
+      const res = await fetch("/api/health", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "switch-model", model: newModel }),
+      });
+      if (res.ok) {
+        alert("🚀 正在切换并重启...");
+        setTimeout(() => window.location.reload(), 3000);
+      }
+    } catch (e) {
+      alert("❌ 切换失败");
+    }
+  };
+
   // ============ GPU STATUS ============
 
   const fetchGpu = useCallback(() => {
@@ -671,9 +713,37 @@ export function Nexus() {
         <section className={styles.chatPanel}>
           <header>
             <span className={styles.panelTitle}>AGENT TERMINAL</span>
-            <span className={styles.modelTag}>
-              {gatewayModel !== "-" ? gatewayModel : "claude-opus-4-5"}
+            <span
+              className={styles.modelTag}
+              onClick={() => setShowModelSelector(!showModelSelector)}
+              style={{ cursor: "pointer" }}
+              title="点击切换模型"
+            >
+              {getModelDisplayName(
+                gatewayModel !== "-"
+                  ? gatewayModel
+                  : "anthropic/claude-opus-4-5",
+              )}{" "}
+              ▾
             </span>
+            {showModelSelector && (
+              <div className={styles.modelDropdown}>
+                {MODEL_OPTIONS.map((opt) => (
+                  <div
+                    key={opt.value}
+                    className={`${styles.modelOption} ${
+                      gatewayModel === opt.value ? styles.active : ""
+                    }`}
+                    onClick={() => {
+                      setShowModelSelector(false);
+                      handleModelChange(opt.value);
+                    }}
+                  >
+                    {opt.title}
+                  </div>
+                ))}
+              </div>
+            )}
           </header>
           {/* Agent Status Bar */}
           <div className={styles.agentStatus}>

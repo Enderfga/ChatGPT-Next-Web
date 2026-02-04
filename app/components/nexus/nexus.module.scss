@@ -159,6 +159,7 @@ $magenta: #d2a8ff;
   overflow: hidden;
 
   > header {
+    position: relative;
     padding: 10px 14px;
     border-bottom: 1px solid $border;
     background: $bg-elevated;
@@ -183,6 +184,40 @@ $magenta: #d2a8ff;
   border: 1px solid rgba(230, 180, 80, 0.3);
   border-radius: 4px;
   background: rgba(230, 180, 80, 0.1);
+  
+  &:hover {
+    background: rgba(230, 180, 80, 0.2);
+  }
+}
+
+.modelDropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: #1a1a1a;
+  border: 1px solid rgba(230, 180, 80, 0.3);
+  border-radius: 6px;
+  padding: 4px 0;
+  z-index: 100;
+  min-width: 160px;
+}
+
+.modelOption {
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #ccc;
+  cursor: pointer;
+  
+  &:hover {
+    background: rgba(230, 180, 80, 0.15);
+    color: $accent;
+  }
+  
+  &.active {
+    color: $accent;
+    background: rgba(230, 180, 80, 0.1);
+  }
 }
 
 // Agent Status Bar
