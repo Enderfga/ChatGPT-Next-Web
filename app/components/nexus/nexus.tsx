@@ -3,9 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./nexus.module.scss";
-import { ApiPath, Path } from "../../constant";
+import { ACCESS_CODE_PREFIX, ApiPath, Path } from "../../constant";
 import { useAccessStore } from "../../store";
-import { getHeaders } from "../../client/api";
 import "xterm/css/xterm.css";
 
 import OpenClawLogo from "../../icons/openclaw.svg";
@@ -303,11 +302,16 @@ export function Nexus() {
     setChatLoading(true);
 
     try {
-      // Use same headers as default chat (includes auth)
-      const headers = getHeaders();
+      // Simple auth headers (same format as default chat uses)
+      const authToken = accessStore.accessCode
+        ? `${ACCESS_CODE_PREFIX}${accessStore.accessCode}`
+        : "";
       const res = await fetch(chatApiUrl, {
         method: "POST",
-        headers,
+        headers: {
+          "Content-Type": "application/json",
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+        },
         body: JSON.stringify({
           model:
             gatewayModel !== "-" ? gatewayModel : "anthropic/claude-opus-4-5",
