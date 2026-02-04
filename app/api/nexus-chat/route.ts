@@ -37,33 +37,31 @@ export async function POST(req: NextRequest) {
     // Determine gateway URL based on environment
     const host = req.headers.get("host") || "";
     const isLocal = host.includes("localhost") || host.includes("127.0.0.1");
-    // Local: direct to gateway, Remote: through sasha-doctor proxy (has gateway auth)
+
+    // Both local and remote: call gateway directly (default cloudflare route)
+    // Local: localhost:18789, Remote: api.enderfga.cn (default route goes to gateway)
     const gatewayUrl = isLocal
       ? "http://localhost:18789/v1/chat/completions"
-      : "https://api.enderfga.cn/sasha-doctor/v1/chat/completions";
+      : "https://api.enderfga.cn/v1/chat/completions";
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
 
-    if (isLocal) {
-      // Local: use gateway password from env or config
-      const password = await getGatewayPassword();
-      if (password) {
-        headers["Authorization"] = `Bearer ${password}`;
-      }
-    } else {
-      // Remote: use CF Access headers
+    // Gateway auth - use password from env or config
+    const gatewayPassword =
+      (await getGatewayPassword()) || process.env.CODE || "";
+    if (gatewayPassword) {
+      headers["Authorization"] = `Bearer ${gatewayPassword}`;
+    }
+
+    // CF Access headers for remote calls
+    if (!isLocal) {
       const cfId = process.env.CF_ACCESS_CLIENT_ID;
       const cfSecret = process.env.CF_ACCESS_CLIENT_SECRET;
-      const authToken = process.env.CODE || "";
-
       if (cfId && cfSecret) {
         headers["CF-Access-Client-Id"] = cfId;
         headers["CF-Access-Client-Secret"] = cfSecret;
-      }
-      if (authToken) {
-        headers["Authorization"] = `Bearer ${authToken}`;
       }
     }
 
