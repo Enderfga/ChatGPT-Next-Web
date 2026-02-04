@@ -29,8 +29,9 @@ interface ServiceStatus {
 }
 
 type IntelState = {
+  accountsTotal: number;
   creditLimitSgd: number;
-  debtSgd: number;
+  activeCards: number;
   mail: { personal: number; work: number; school: number };
 };
 
@@ -93,10 +94,12 @@ export function Nexus() {
   ]);
   const [gatewayModel, setGatewayModel] = useState("-");
   const [intel, setIntel] = useLocalStorageState<IntelState>("nexus-intel", {
+    accountsTotal: 0,
     creditLimitSgd: 0,
-    debtSgd: 2354.23,
+    activeCards: 0,
     mail: { personal: 0, work: 0, school: 0 },
   });
+  const [financeLoading, setFinanceLoading] = useState(true);
   const [editIntel, setEditIntel] = useState(false);
 
   // Council state
@@ -154,6 +157,35 @@ export function Nexus() {
     };
     loadHosts();
   }, []);
+
+  // ============ LOAD FINANCE DATA FROM NOTION ============
+
+  useEffect(() => {
+    const loadFinance = async () => {
+      try {
+        setFinanceLoading(true);
+        const res = await fetch("/api/notion-summary", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.ok) {
+          setIntel((prev) => ({
+            ...prev,
+            accountsTotal: data.accounts?.total || 0,
+            creditLimitSgd: data.creditCards?.totalLimit || 0,
+            activeCards: data.creditCards?.activeCount || 0,
+          }));
+        }
+      } catch (e) {
+        console.error("[NEXUS] Failed to load finance data:", e);
+      } finally {
+        setFinanceLoading(false);
+      }
+    };
+    loadFinance();
+    // Refresh every 5 minutes
+    const timer = setInterval(loadFinance, 5 * 60 * 1000);
+    return () => clearInterval(timer);
+  }, [setIntel]);
 
   const hostOptions = useMemo(() => {
     return sshHosts.length > 0 ? sshHosts : SSH_HOSTS_FALLBACK;
@@ -778,50 +810,18 @@ export function Nexus() {
             <div className={styles.intelCard}>
               <h4>
                 FINANCE{" "}
-                <button onClick={() => setEditIntel(!editIntel)}>
-                  {editIntel ? "OK" : "Edit"}
-                </button>
+                {financeLoading && <span style={{ opacity: 0.5 }}>⏳</span>}
               </h4>
-              {editIntel ? (
-                <>
-                  <label>
-                    Limit{" "}
-                    <input
-                      type="number"
-                      value={intel.creditLimitSgd}
-                      onChange={(e) =>
-                        setIntel((p) => ({
-                          ...p,
-                          creditLimitSgd: +e.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-                  <label>
-                    Debt{" "}
-                    <input
-                      type="number"
-                      value={intel.debtSgd}
-                      onChange={(e) =>
-                        setIntel((p) => ({ ...p, debtSgd: +e.target.value }))
-                      }
-                    />
-                  </label>
-                </>
-              ) : (
-                <>
-                  <div className={styles.metric}>
-                    <span>Limit</span>
-                    <strong>{intel.creditLimitSgd.toLocaleString()} SGD</strong>
-                  </div>
-                  <div className={styles.metric}>
-                    <span>Debt</span>
-                    <strong className={styles.red}>
-                      {intel.debtSgd.toLocaleString()} SGD
-                    </strong>
-                  </div>
-                </>
-              )}
+              <div className={styles.metric}>
+                <span>💰 Accounts</span>
+                <strong style={{ color: "#3fb950" }}>
+                  ${intel.accountsTotal.toLocaleString()}
+                </strong>
+              </div>
+              <div className={styles.metric}>
+                <span>💳 Credit ({intel.activeCards} cards)</span>
+                <strong>${intel.creditLimitSgd.toLocaleString()}</strong>
+              </div>
             </div>
 
             <div className={styles.intelCard}>
