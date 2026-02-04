@@ -304,13 +304,24 @@ export function Nexus() {
           setIsReconnecting(false);
           reconnectAttemptRef.current = 0; // Reset on successful connection
           terminal.writeln("\x1b[32m● Connected\x1b[0m\n");
-          ws.send(
+          console.log(
+            "[Terminal] Ready! wsRef.current:",
+            wsRef.current?.readyState,
+          );
+          // Use wsRef.current for reconnection support
+          wsRef.current?.send(
             JSON.stringify({
               type: "resize",
               cols: terminal.cols,
               rows: terminal.rows,
             }),
           );
+          // Focus terminal after ready (critical for reconnection!)
+          // Multiple attempts to ensure focus works after reconnect
+          terminal.focus();
+          requestAnimationFrame(() => terminal.focus());
+          setTimeout(() => terminal.focus(), 100);
+          setTimeout(() => terminal.focus(), 300);
         } else if (msg.type === "output") {
           terminal.write(msg.data);
         } else if (msg.type === "exit") {
@@ -373,16 +384,23 @@ export function Nexus() {
       // Error will trigger onclose, no action needed here
     };
 
+    // IMPORTANT: Use wsRef.current instead of ws to support reconnection
     terminal.onData((data: string) => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ type: "input", data }));
+      console.log(
+        "[Terminal] onData:",
+        data,
+        "wsRef.current:",
+        wsRef.current?.readyState,
+      );
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ type: "input", data }));
       }
     });
 
     const resizeObserver = new ResizeObserver(() => {
       fitAddon.fit();
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.send(
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(
           JSON.stringify({
             type: "resize",
             cols: terminal.cols,
@@ -953,7 +971,10 @@ export function Nexus() {
                 )}
               </div>
             </header>
-            <div className={styles.terminalWrap}>
+            <div
+              className={styles.terminalWrap}
+              onClick={() => xtermRef.current?.focus()}
+            >
               <div ref={terminalRef} className={styles.terminal} />
             </div>
           </section>
