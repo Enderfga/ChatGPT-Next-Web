@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 import styles from "./nexus.module.scss";
 import { Path } from "../../constant";
 import { useAccessStore } from "../../store";
-import { Chat } from "../chat";
 import "xterm/css/xterm.css";
 
 import OpenClawLogo from "../../icons/openclaw.svg";
@@ -15,10 +14,7 @@ import ClaudeLogo from "../../icons/llm-icons/claude.svg";
 
 // ============ TYPES ============
 
-type SshHost = {
-  name: string;
-  hostname?: string;
-};
+type SshHost = { name: string; hostname?: string };
 
 interface GpuInfo {
   name: string;
@@ -38,26 +34,43 @@ type IntelState = {
   mail: { personal: number; work: number; school: number };
 };
 
+interface ChatMessage {
+  role: "user" | "assistant" | "system";
+  content: string;
+  timestamp: number;
+}
+
 // ============ HELPERS ============
 
 function useLocalStorageState<T>(key: string, initialValue: T) {
   const [value, setValue] = useState<T>(initialValue);
-
   useEffect(() => {
     try {
       const stored = localStorage.getItem(key);
       if (stored) setValue(JSON.parse(stored) as T);
     } catch {}
   }, [key]);
-
   useEffect(() => {
     try {
       localStorage.setItem(key, JSON.stringify(value));
     } catch {}
   }, [key, value]);
-
   return [value, setValue] as const;
 }
+
+// Full SSH hosts fallback (matches ~/.ssh/config)
+const SSH_HOSTS_FALLBACK: SshHost[] = [
+  { name: "GMI6", hostname: "157.66.255.67" },
+  { name: "GMI5", hostname: "157.66.255.3" },
+  { name: "GMI4", hostname: "157.66.255.69" },
+  { name: "GMI3", hostname: "157.66.255.68" },
+  { name: "GMI2", hostname: "157.66.255.54" },
+  { name: "GMI1", hostname: "157.66.255.53" },
+  { name: "nus", hostname: "hopper.nus.edu.sg" },
+  { name: "miko", hostname: "86.38.238.182" },
+  { name: "air" },
+  { name: "pro" },
+];
 
 // ============ MAIN COMPONENT ============
 
@@ -65,11 +78,13 @@ export function Nexus() {
   const navigate = useNavigate();
   const accessStore = useAccessStore();
 
+  // Terminal state
   const [terminalMode, setTerminalMode] = useState<"local" | "ssh">("local");
   const [sshHosts, setSshHosts] = useState<SshHost[]>([]);
   const [selectedHost, setSelectedHost] = useState("GMI6");
-
   const [isConnected, setIsConnected] = useState(false);
+
+  // Intel state
   const [gpuData, setGpuData] = useState<GpuInfo[]>([]);
   const [services, setServices] = useState<ServiceStatus[]>([
     { name: "openclaw-gateway", status: "unknown" },
@@ -77,17 +92,23 @@ export function Nexus() {
     { name: "cloudflared", status: "unknown" },
   ]);
   const [gatewayModel, setGatewayModel] = useState("-");
-
-  const [councilTopic, setCouncilTopic] = useState("");
-  const [councilRunning, setCouncilRunning] = useState(false);
-  const [councilLogs, setCouncilLogs] = useState<string[]>([]);
-
   const [intel, setIntel] = useLocalStorageState<IntelState>("nexus-intel", {
     creditLimitSgd: 0,
     debtSgd: 2354.23,
     mail: { personal: 0, work: 0, school: 0 },
   });
   const [editIntel, setEditIntel] = useState(false);
+
+  // Council state
+  const [councilTopic, setCouncilTopic] = useState("");
+  const [councilRunning, setCouncilRunning] = useState(false);
+  const [councilLogs, setCouncilLogs] = useState<string[]>([]);
+
+  // Chat state
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Terminal refs
   const terminalRef = useRef<HTMLDivElement>(null);
@@ -96,17 +117,27 @@ export function Nexus() {
   const wsRef = useRef<WebSocket | null>(null);
   const terminalCleanupRef = useRef<(() => void) | null>(null);
 
-  // ============ CONFIG + HOSTS ============
+  // ============ WEBSOCKET URL ============
 
   const wsUrl = useMemo(() => {
     if (typeof window === "undefined") return "";
-    const isLocalhost =
-      window.location.hostname === "localhost" ||
-      window.location.hostname === "127.0.0.1";
-    return isLocalhost
+    const isLocal = ["localhost", "127.0.0.1"].includes(
+      window.location.hostname,
+    );
+    return isLocal
       ? "ws://localhost:18795/terminal"
       : "wss://api.enderfga.cn/sasha-doctor/terminal";
   }, []);
+
+  const apiBase = useMemo(() => {
+    if (typeof window === "undefined") return "";
+    const isLocal = ["localhost", "127.0.0.1"].includes(
+      window.location.hostname,
+    );
+    return isLocal ? "http://localhost:18789" : "https://api.enderfga.cn";
+  }, []);
+
+  // ============ LOAD SSH HOSTS ============
 
   useEffect(() => {
     const loadHosts = async () => {
@@ -114,25 +145,25 @@ export function Nexus() {
         const res = await fetch("/api/ssh-hosts", { cache: "no-store" });
         if (!res.ok) return;
         const data = await res.json();
-        if (Array.isArray(data.hosts)) setSshHosts(data.hosts);
+        if (Array.isArray(data.hosts) && data.hosts.length > 0) {
+          setSshHosts(data.hosts);
+        }
       } catch {}
     };
     loadHosts();
   }, []);
 
   const hostOptions = useMemo(() => {
-    if (sshHosts.length > 0) return sshHosts;
-    return [{ name: "GMI6" }, { name: "GMI1" }, { name: "GMI2" }];
+    return sshHosts.length > 0 ? sshHosts : SSH_HOSTS_FALLBACK;
   }, [sshHosts]);
 
   useEffect(() => {
-    if (!hostOptions.length) return;
     if (!hostOptions.find((h) => h.name === selectedHost)) {
-      setSelectedHost(hostOptions[0].name);
+      setSelectedHost(hostOptions[0]?.name || "GMI6");
     }
   }, [hostOptions, selectedHost]);
 
-  // ============ TERMINAL (JSON Protocol) ============
+  // ============ TERMINAL ============
 
   const initTerminal = useCallback(async () => {
     if (!terminalRef.current || xtermRef.current || !wsUrl) return;
@@ -166,7 +197,6 @@ export function Nexus() {
     const fitAddon = new FitAddon();
     terminal.loadAddon(fitAddon);
     terminal.loadAddon(new WebLinksAddon());
-
     terminal.open(terminalRef.current);
     setTimeout(() => fitAddon.fit(), 100);
 
@@ -187,30 +217,24 @@ export function Nexus() {
     ws.onmessage = (e) => {
       try {
         const msg = JSON.parse(e.data);
-        switch (msg.type) {
-          case "ready":
-            setIsConnected(true);
-            terminal.writeln("\x1b[32m● Connected\x1b[0m\n");
-            ws.send(
-              JSON.stringify({
-                type: "resize",
-                cols: terminal.cols,
-                rows: terminal.rows,
-              }),
-            );
-            break;
-          case "output":
-            terminal.write(msg.data);
-            break;
-          case "exit":
-            terminal.writeln(`\n\x1b[31m● Process exited (${msg.code})\x1b[0m`);
-            break;
-          case "error":
-            terminal.writeln(`\n\x1b[31m● Error: ${msg.message}\x1b[0m`);
-            break;
+        if (msg.type === "ready") {
+          setIsConnected(true);
+          terminal.writeln("\x1b[32m● Connected\x1b[0m\n");
+          ws.send(
+            JSON.stringify({
+              type: "resize",
+              cols: terminal.cols,
+              rows: terminal.rows,
+            }),
+          );
+        } else if (msg.type === "output") {
+          terminal.write(msg.data);
+        } else if (msg.type === "exit") {
+          terminal.writeln(`\n\x1b[31m● Exited (${msg.code})\x1b[0m`);
+        } else if (msg.type === "error") {
+          terminal.writeln(`\n\x1b[31m● ${msg.message}\x1b[0m`);
         }
       } catch {
-        // Raw text fallback
         terminal.write(e.data);
       }
     };
@@ -238,7 +262,6 @@ export function Nexus() {
         );
       }
     });
-
     resizeObserver.observe(terminalRef.current);
 
     terminalCleanupRef.current = () => {
@@ -256,181 +279,215 @@ export function Nexus() {
     return () => terminalCleanupRef.current?.();
   }, [initTerminal]);
 
-  const sendTerminalCommand = (cmd: string) => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-    wsRef.current.send(JSON.stringify({ type: "input", data: cmd + "\n" }));
+  const sendCmd = (cmd: string) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: "input", data: cmd + "\n" }));
+    }
   };
 
-  const connectSsh = () => sendTerminalCommand(`ssh ${selectedHost}`);
-  const disconnectSsh = () => sendTerminalCommand("exit");
+  // ============ CHAT (Hacker Style) ============
 
-  // ============ GPU MONITORING (via terminal) ============
+  const sendChat = async () => {
+    if (!chatInput.trim() || chatLoading) return;
 
-  const fetchGpuStatus = useCallback(() => {
+    const userMsg: ChatMessage = {
+      role: "user",
+      content: chatInput.trim(),
+      timestamp: Date.now(),
+    };
+    setChatMessages((prev) => [...prev, userMsg]);
+    setChatInput("");
+    setChatLoading(true);
+
+    try {
+      const res = await fetch(`${apiBase}/v1/chat/completions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessStore.accessCode}`,
+        },
+        body: JSON.stringify({
+          model:
+            gatewayModel !== "-" ? gatewayModel : "anthropic/claude-opus-4-5",
+          messages: [...chatMessages, userMsg].map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+          max_tokens: 4096,
+        }),
+      });
+
+      if (!res.ok) throw new Error(`API error: ${res.status}`);
+      const data = await res.json();
+      const assistantContent =
+        data.choices?.[0]?.message?.content || "No response";
+
+      setChatMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: assistantContent, timestamp: Date.now() },
+      ]);
+    } catch (err: any) {
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: `[ERROR] ${err.message}`,
+          timestamp: Date.now(),
+        },
+      ]);
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages]);
+
+  // ============ GPU STATUS ============
+
+  const fetchGpu = useCallback(() => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
 
-    // Create a temporary listener for GPU data
-    const gpuBuffer: string[] = [];
+    const gpuBuf: string[] = [];
     let capturing = false;
+    const orig = wsRef.current.onmessage;
 
-    const originalOnMessage = wsRef.current.onmessage;
     wsRef.current.onmessage = (e) => {
       try {
         const msg = JSON.parse(e.data);
         if (msg.type === "output") {
-          const data = msg.data;
-          if (data.includes("__GPU_START__")) {
+          if (msg.data.includes("__GPU_START__")) {
             capturing = true;
             return;
           }
-          if (data.includes("__GPU_END__")) {
+          if (msg.data.includes("__GPU_END__")) {
             capturing = false;
-            // Parse GPU data
-            const text = gpuBuffer.join("");
-            const lines = text
+            const lines = gpuBuf
+              .join("")
               .split("\n")
               .filter((l) => l.includes(",") && !l.includes("name"));
             const gpus: GpuInfo[] = lines.map((line) => {
-              const parts = line.split(",").map((s) => s.trim());
+              const p = line.split(",").map((s) => s.trim());
               return {
-                name: parts[0] || "GPU",
-                utilization: parseInt(parts[1]) || 0,
+                name: p[0] || "GPU",
+                utilization: parseInt(p[1]) || 0,
                 memory: {
-                  used: parseInt(parts[2]) || 0,
-                  total: parseInt(parts[3]) || 0,
+                  used: parseInt(p[2]) || 0,
+                  total: parseInt(p[3]) || 0,
                 },
-                temperature: parseInt(parts[4]) || 0,
+                temperature: parseInt(p[4]) || 0,
               };
             });
             if (gpus.length > 0) setGpuData(gpus);
-            // Restore original handler
-            if (wsRef.current) wsRef.current.onmessage = originalOnMessage;
+            if (wsRef.current) wsRef.current.onmessage = orig;
             return;
           }
-          if (capturing) {
-            gpuBuffer.push(data);
-          }
+          if (capturing) gpuBuf.push(msg.data);
         }
       } catch {}
-      // Call original handler
-      if (originalOnMessage && wsRef.current)
-        originalOnMessage.call(wsRef.current, e);
+      if (orig && wsRef.current) orig.call(wsRef.current, e);
     };
 
-    // Send command to fetch GPU info
-    const cmd = `echo __GPU_START__ && ssh ${selectedHost} "nvidia-smi --query-gpu=name,utilization.gpu,memory.used,memory.total,temperature.gpu --format=csv,noheader,nounits 2>/dev/null" && echo __GPU_END__`;
-    sendTerminalCommand(cmd);
-
-    // Timeout: restore handler after 10s
+    sendCmd(
+      `echo __GPU_START__ && ssh ${selectedHost} "nvidia-smi --query-gpu=name,utilization.gpu,memory.used,memory.total,temperature.gpu --format=csv,noheader,nounits 2>/dev/null" && echo __GPU_END__`,
+    );
     setTimeout(() => {
-      if (wsRef.current && wsRef.current.onmessage !== originalOnMessage) {
-        wsRef.current.onmessage = originalOnMessage;
-      }
+      if (wsRef.current && wsRef.current.onmessage !== orig)
+        wsRef.current.onmessage = orig;
     }, 10000);
   }, [selectedHost]);
 
   // ============ SERVICES ============
 
   useEffect(() => {
-    const checkServices = async () => {
+    const check = async () => {
       try {
         const res = await fetch("/api/health", { cache: "no-store" });
         if (!res.ok) return;
         const data = await res.json();
         setGatewayModel(data.model || "-");
         setServices((prev) =>
-          prev.map((svc) => {
-            if (svc.name === "openclaw-gateway") {
-              return {
-                ...svc,
-                status: data.status === "online" ? "running" : "stopped",
-              };
-            }
-            if (svc.name === "sasha-doctor") {
-              return { ...svc, status: "running" };
-            }
-            return svc;
-          }),
+          prev.map((s) =>
+            s.name === "openclaw-gateway"
+              ? {
+                  ...s,
+                  status: data.status === "online" ? "running" : "stopped",
+                }
+              : s.name === "sasha-doctor"
+              ? { ...s, status: "running" }
+              : s,
+          ),
         );
       } catch {}
     };
-
-    checkServices();
-    const interval = setInterval(checkServices, 15000);
-    return () => clearInterval(interval);
+    check();
+    const t = setInterval(check, 15000);
+    return () => clearInterval(t);
   }, []);
 
-  // ============ THREE MINDS (Local) ============
+  // ============ THREE MINDS ============
 
   const startCouncil = () => {
-    if (!councilTopic.trim() || councilRunning) return;
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-
+    if (!councilTopic.trim() || councilRunning || !wsRef.current) return;
     setCouncilRunning(true);
     setCouncilLogs([]);
 
-    // Capture output for council
-    const councilBuffer: string[] = [];
     let capturing = false;
+    const orig = wsRef.current.onmessage;
 
-    const originalOnMessage = wsRef.current.onmessage;
     wsRef.current.onmessage = (e) => {
       try {
         const msg = JSON.parse(e.data);
         if (msg.type === "output") {
-          const data = msg.data;
-          if (data.includes("__COUNCIL_START__")) {
+          if (msg.data.includes("__COUNCIL_START__")) {
             capturing = true;
             return;
           }
-          if (data.includes("__COUNCIL_END__")) {
+          if (msg.data.includes("__COUNCIL_END__")) {
             capturing = false;
             setCouncilRunning(false);
-            if (wsRef.current) wsRef.current.onmessage = originalOnMessage;
+            if (wsRef.current) wsRef.current.onmessage = orig;
             return;
           }
           if (capturing) {
-            // Add to logs, filtering ANSI and empty lines
-            const clean = data
+            const clean = msg.data
               .replace(/\x1b\[[0-9;]*m/g, "")
               .replace(/\r/g, "");
             const lines = clean.split("\n").filter((l: string) => l.trim());
-            if (lines.length > 0) {
+            if (lines.length)
               setCouncilLogs((prev) => [...prev, ...lines].slice(-50));
-            }
           }
         }
       } catch {}
-      if (originalOnMessage && wsRef.current)
-        originalOnMessage.call(wsRef.current, e);
+      if (orig && wsRef.current) orig.call(wsRef.current, e);
     };
 
-    // Run three-minds locally
-    const escapedTopic = councilTopic.replace(/'/g, "'\"'\"'");
-    const cmd = `echo __COUNCIL_START__ && three-minds '${escapedTopic}' --quiet 2>&1; echo __COUNCIL_END__`;
-    sendTerminalCommand(cmd);
-
-    // Timeout after 5 minutes
+    const escaped = councilTopic.replace(/'/g, "'\"'\"'");
+    sendCmd(
+      `echo __COUNCIL_START__ && three-minds '${escaped}' --quiet 2>&1; echo __COUNCIL_END__`,
+    );
     setTimeout(() => {
       if (councilRunning) {
         setCouncilRunning(false);
-        if (wsRef.current && wsRef.current.onmessage !== originalOnMessage) {
-          wsRef.current.onmessage = originalOnMessage;
-        }
+        if (wsRef.current && wsRef.current.onmessage !== orig)
+          wsRef.current.onmessage = orig;
       }
     }, 300000);
   };
 
   const commitSha = process.env.COMMIT_SHA || "dev";
-  const repo = process.env.GITHUB_REPO || "Enderfga/ChatGPT-Next-Web";
   const shortSha = commitSha.slice(0, 7);
-  const commitUrl = `https://github.com/${repo}/commit/${commitSha}`;
+  const commitUrl = `https://github.com/${
+    process.env.GITHUB_REPO || "Enderfga/ChatGPT-Next-Web"
+  }/commit/${commitSha}`;
+
+  // ============ RENDER ============
 
   return (
     <div className={styles.nexus}>
       <div className={styles.gridOverlay} />
 
-      {/* Header */}
       <header className={styles.header}>
         <div className={styles.brand}>
           <OpenClawLogo className={styles.logo} />
@@ -463,19 +520,67 @@ export function Nexus() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className={styles.main}>
-        {/* Chat Panel */}
+        {/* LEFT: Hacker Chat */}
         <section className={styles.chatPanel}>
           <header>
-            <span className={styles.panelTitle}>AGENT</span>
+            <span className={styles.panelTitle}>AGENT TERMINAL</span>
+            <span className={styles.modelTag}>
+              {gatewayModel !== "-" ? gatewayModel : "claude-opus-4-5"}
+            </span>
           </header>
-          <div className={styles.chatContent}>
-            <Chat />
+          <div className={styles.chatMessages}>
+            {chatMessages.length === 0 && (
+              <div className={styles.chatEmpty}>
+                <div className={styles.asciiArt}>
+                  {`    ╔═══════════════════════════════════╗
+    ║   OPENCLAW NEXUS v2.0             ║
+    ║   Neural Interface Active         ║
+    ╠═══════════════════════════════════╣
+    ║   > Ready for input...            ║
+    ╚═══════════════════════════════════╝`}
+                </div>
+                <p>Type a message to start conversation</p>
+              </div>
+            )}
+            {chatMessages.map((msg, i) => (
+              <div key={i} className={`${styles.chatMsg} ${styles[msg.role]}`}>
+                <span className={styles.chatPrefix}>
+                  {msg.role === "user" ? "user@nexus:~$" : "claude@openclaw:~>"}
+                </span>
+                <pre className={styles.chatContent}>{msg.content}</pre>
+              </div>
+            ))}
+            {chatLoading && (
+              <div className={`${styles.chatMsg} ${styles.assistant}`}>
+                <span className={styles.chatPrefix}>claude@openclaw:~&gt;</span>
+                <span className={styles.typing}>
+                  Processing<span className={styles.dots}>...</span>
+                </span>
+              </div>
+            )}
+            <div ref={chatEndRef} />
+          </div>
+          <div className={styles.chatInputWrap}>
+            <span className={styles.prompt}>&gt;</span>
+            <input
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendChat()}
+              placeholder="Enter command..."
+              disabled={chatLoading}
+              autoFocus
+            />
+            <button
+              onClick={sendChat}
+              disabled={chatLoading || !chatInput.trim()}
+            >
+              {chatLoading ? "..." : "SEND"}
+            </button>
           </div>
         </section>
 
-        {/* Right Side */}
+        {/* RIGHT: Sidebar */}
         <aside className={styles.sidebar}>
           {/* Council */}
           <section className={styles.panel}>
@@ -514,7 +619,7 @@ export function Nexus() {
           </section>
 
           {/* Terminal */}
-          <section className={styles.panel + " " + styles.terminalPanel}>
+          <section className={`${styles.panel} ${styles.terminalPanel}`}>
             <header>
               <span className={styles.panelTitle}>TERMINAL</span>
               <div className={styles.termControls}>
@@ -537,13 +642,16 @@ export function Nexus() {
                   {hostOptions.map((h) => (
                     <option key={h.name} value={h.name}>
                       {h.name}
+                      {h.hostname ? ` (${h.hostname})` : ""}
                     </option>
                   ))}
                 </select>
                 {terminalMode === "ssh" && (
                   <>
-                    <button onClick={connectSsh}>Connect</button>
-                    <button onClick={disconnectSsh}>Exit</button>
+                    <button onClick={() => sendCmd(`ssh ${selectedHost}`)}>
+                      Connect
+                    </button>
+                    <button onClick={() => sendCmd("exit")}>Exit</button>
                   </>
                 )}
               </div>
@@ -553,9 +661,8 @@ export function Nexus() {
             </div>
           </section>
 
-          {/* Intel Grid */}
+          {/* Intel */}
           <section className={styles.intelGrid}>
-            {/* Services */}
             <div className={styles.intelCard}>
               <h4>SERVICES</h4>
               {services.map((s) => (
@@ -566,7 +673,6 @@ export function Nexus() {
               ))}
             </div>
 
-            {/* Finance */}
             <div className={styles.intelCard}>
               <h4>
                 FINANCE{" "}
@@ -616,7 +722,6 @@ export function Nexus() {
               )}
             </div>
 
-            {/* Mail */}
             <div className={styles.intelCard}>
               <h4>MAIL</h4>
               <div className={styles.mailRow}>
@@ -635,11 +740,10 @@ export function Nexus() {
               </div>
             </div>
 
-            {/* GPU */}
             <div className={styles.intelCard}>
               <h4>
                 GPU <span className={styles.hostTag}>{selectedHost}</span>{" "}
-                <button onClick={fetchGpuStatus}>Refresh</button>
+                <button onClick={fetchGpu}>Refresh</button>
               </h4>
               {gpuData.length === 0 ? (
                 <span className={styles.empty}>No data</span>

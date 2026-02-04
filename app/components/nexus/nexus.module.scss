@@ -1,21 +1,20 @@
 @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap");
 
-// Ayu Dark inspired palette
+// Ayu Dark palette
 $bg-deep: #0a0e14;
 $bg: #0d1117;
 $bg-elevated: #161b22;
 $bg-surface: #1c2128;
 $border: #30363d;
-$border-accent: #e6b450;
 $text: #c9d1d9;
 $text-muted: #8b949e;
 $text-dim: #484f58;
 $accent: #e6b450;
-$accent-glow: rgba(230, 180, 80, 0.3);
 $green: #7ee787;
 $red: #f85149;
 $blue: #58a6ff;
 $cyan: #90e1c6;
+$magenta: #d2a8ff;
 
 .nexus {
   position: fixed;
@@ -33,9 +32,9 @@ $cyan: #90e1c6;
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(230, 180, 80, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(230, 180, 80, 0.02) 1px, transparent 1px);
-  background-size: 60px 60px;
+    linear-gradient(rgba(230, 180, 80, 0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(230, 180, 80, 0.015) 1px, transparent 1px);
+  background-size: 50px 50px;
   pointer-events: none;
 }
 
@@ -48,7 +47,7 @@ $cyan: #90e1c6;
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid $border;
-  background: linear-gradient(180deg, $bg-elevated 0%, $bg-deep 100%);
+  background: $bg-elevated;
   flex-shrink: 0;
   z-index: 10;
 }
@@ -62,7 +61,7 @@ $cyan: #90e1c6;
 .logo {
   width: 32px;
   height: 32px;
-  filter: drop-shadow(0 0 8px $accent-glow);
+  filter: drop-shadow(0 0 8px rgba(230, 180, 80, 0.3));
 }
 
 .brandInfo {
@@ -93,16 +92,10 @@ $cyan: #90e1c6;
   font-weight: 600;
   color: $red;
   letter-spacing: 1px;
-
-  &::before {
-    content: "○ ";
-  }
-
+  &::before { content: "○ "; }
   &.live {
     color: $green;
-    &::before {
-      content: "● ";
-    }
+    &::before { content: "● "; }
   }
 }
 
@@ -125,11 +118,7 @@ $cyan: #90e1c6;
   border: 1px solid transparent;
   border-radius: 4px;
   transition: all 0.15s;
-
-  &:hover {
-    color: $accent;
-    border-color: $border;
-  }
+  &:hover { color: $accent; border-color: $border; }
 }
 
 .exitBtn {
@@ -143,14 +132,10 @@ $cyan: #90e1c6;
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.15s;
-
-  &:hover {
-    color: $red;
-    border-color: $red;
-  }
+  &:hover { color: $red; border-color: $red; }
 }
 
-// ========== MAIN LAYOUT ==========
+// ========== MAIN ==========
 
 .main {
   flex: 1;
@@ -161,7 +146,7 @@ $cyan: #90e1c6;
   overflow: hidden;
 }
 
-// ========== CHAT PANEL ==========
+// ========== CHAT PANEL (Hacker Style) ==========
 
 .chatPanel {
   display: flex;
@@ -175,6 +160,9 @@ $cyan: #90e1c6;
     padding: 10px 14px;
     border-bottom: 1px solid $border;
     background: $bg-elevated;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
 }
 
@@ -185,14 +173,148 @@ $cyan: #90e1c6;
   color: $text-muted;
 }
 
-.chatContent {
-  flex: 1;
-  overflow: hidden;
+.modelTag {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  color: $accent;
+  padding: 2px 8px;
+  border: 1px solid rgba(230, 180, 80, 0.3);
+  border-radius: 4px;
+  background: rgba(230, 180, 80, 0.1);
+}
 
-  :global(.chat-page),
-  :global(.chat) {
-    height: 100%;
+.chatMessages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background:
+    linear-gradient(180deg, transparent 0%, rgba(10, 14, 20, 0.5) 100%),
+    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 0, 0.01) 2px, rgba(0, 255, 0, 0.01) 4px);
+}
+
+.chatEmpty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: $text-dim;
+  text-align: center;
+
+  p {
+    margin-top: 16px;
+    font-size: 12px;
   }
+}
+
+.asciiArt {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  color: $green;
+  line-height: 1.3;
+  white-space: pre;
+  opacity: 0.7;
+}
+
+.chatMsg {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  &.user {
+    .chatPrefix { color: $cyan; }
+    .chatContent { color: $text; }
+  }
+
+  &.assistant {
+    .chatPrefix { color: $green; }
+    .chatContent { color: $text-muted; }
+  }
+}
+
+.chatPrefix {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.chatContent {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border-left: 2px solid $border;
+  border-radius: 0 4px 4px 0;
+}
+
+.typing {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px;
+  color: $text-muted;
+}
+
+.dots {
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.chatInputWrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid $border;
+  background: $bg-elevated;
+}
+
+.prompt {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 14px;
+  color: $green;
+  font-weight: 600;
+}
+
+.chatInputWrap input {
+  flex: 1;
+  background: $bg-surface;
+  border: 1px solid $border;
+  border-radius: 4px;
+  padding: 10px 14px;
+  color: $text;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px;
+  outline: none;
+
+  &:focus { border-color: $accent; }
+  &::placeholder { color: $text-dim; }
+  &:disabled { opacity: 0.6; }
+}
+
+.chatInputWrap button {
+  background: $accent;
+  border: none;
+  color: $bg-deep;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover:not(:disabled) { filter: brightness(1.1); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
 // ========== SIDEBAR ==========
@@ -226,12 +348,7 @@ $cyan: #90e1c6;
 .modelBadges {
   display: flex;
   gap: 6px;
-
-  svg {
-    width: 16px;
-    height: 16px;
-    opacity: 0.7;
-  }
+  svg { width: 16px; height: 16px; opacity: 0.7; }
 }
 
 .councilContent {
@@ -239,7 +356,7 @@ $cyan: #90e1c6;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: 180px;
+  max-height: 160px;
 }
 
 .councilInput {
@@ -256,14 +373,8 @@ $cyan: #90e1c6;
     font-size: 12px;
     outline: none;
     font-family: inherit;
-
-    &:focus {
-      border-color: $accent;
-    }
-
-    &::placeholder {
-      color: $text-dim;
-    }
+    &:focus { border-color: $accent; }
+    &::placeholder { color: $text-dim; }
   }
 
   button {
@@ -275,16 +386,7 @@ $cyan: #90e1c6;
     font-size: 11px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.15s;
-
-    &:hover:not(:disabled) {
-      filter: brightness(1.1);
-    }
-
-    &:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
   }
 }
 
@@ -292,7 +394,7 @@ $cyan: #90e1c6;
   flex: 1;
   overflow-y: auto;
   font-family: "JetBrains Mono", monospace;
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1.5;
   color: $text-muted;
 
@@ -312,7 +414,7 @@ $cyan: #90e1c6;
 
 .terminalPanel {
   flex: 1;
-  min-height: 200px;
+  min-height: 180px;
 }
 
 .termControls {
@@ -335,10 +437,6 @@ $cyan: #90e1c6;
       border-color: $accent;
       background: rgba(230, 180, 80, 0.1);
     }
-
-    &:hover:not(.active) {
-      border-color: $text-dim;
-    }
   }
 
   select {
@@ -350,10 +448,8 @@ $cyan: #90e1c6;
     padding: 4px 8px;
     outline: none;
     font-family: "JetBrains Mono", monospace;
-
-    option {
-      background: $bg-deep;
-    }
+    max-width: 140px;
+    option { background: $bg-deep; }
   }
 }
 
@@ -366,13 +462,10 @@ $cyan: #90e1c6;
   height: 100%;
   padding: 8px;
   background: $bg-deep;
-
-  :global(.xterm) {
-    height: 100%;
-  }
+  :global(.xterm) { height: 100%; }
 }
 
-// ========== INTEL GRID ==========
+// ========== INTEL ==========
 
 .intelGrid {
   display: grid;
@@ -405,11 +498,7 @@ $cyan: #90e1c6;
       border-radius: 3px;
       font-size: 9px;
       cursor: pointer;
-
-      &:hover {
-        color: $accent;
-        border-color: $accent;
-      }
+      &:hover { color: $accent; border-color: $accent; }
     }
   }
 
@@ -456,19 +545,9 @@ $cyan: #90e1c6;
   height: 6px;
   border-radius: 50%;
   background: $text-dim;
-
-  &.running {
-    background: $green;
-    box-shadow: 0 0 6px rgba(126, 231, 135, 0.5);
-  }
-
-  &.stopped {
-    background: $red;
-  }
-
-  &.unknown {
-    background: $accent;
-  }
+  &.running { background: $green; box-shadow: 0 0 6px rgba(126, 231, 135, 0.5); }
+  &.stopped { background: $red; }
+  &.unknown { background: $accent; }
 }
 
 .metric {
@@ -476,41 +555,20 @@ $cyan: #90e1c6;
   justify-content: space-between;
   font-size: 11px;
   margin-bottom: 4px;
-
-  span {
-    color: $text-muted;
-  }
-
-  strong {
-    font-family: "JetBrains Mono", monospace;
-    color: $text;
-  }
+  span { color: $text-muted; }
+  strong { font-family: "JetBrains Mono", monospace; color: $text; }
 }
 
-.red {
-  color: $red !important;
-}
+.red { color: $red !important; }
 
 .mailRow {
   display: flex;
   gap: 12px;
-
   > div {
     flex: 1;
     text-align: center;
-
-    span {
-      display: block;
-      font-size: 9px;
-      color: $text-dim;
-      margin-bottom: 2px;
-    }
-
-    strong {
-      font-size: 16px;
-      font-family: "JetBrains Mono", monospace;
-      color: $text;
-    }
+    span { display: block; font-size: 9px; color: $text-dim; margin-bottom: 2px; }
+    strong { font-size: 16px; font-family: "JetBrains Mono", monospace; color: $text; }
   }
 }
 
@@ -521,10 +579,7 @@ $cyan: #90e1c6;
   font-size: 10px;
   margin-bottom: 6px;
   font-family: "JetBrains Mono", monospace;
-
-  span {
-    color: $text-muted;
-  }
+  span { color: $text-muted; }
 }
 
 .gpuName {
@@ -542,19 +597,13 @@ $cyan: #90e1c6;
     grid-template-columns: 1fr;
     grid-template-rows: 1fr auto;
   }
-
   .sidebar {
     max-height: 45vh;
     overflow-y: auto;
   }
-
-  .intelGrid {
-    grid-template-columns: repeat(4, 1fr);
-  }
+  .intelGrid { grid-template-columns: repeat(4, 1fr); }
 }
 
 @media (max-width: 800px) {
-  .intelGrid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  .intelGrid { grid-template-columns: repeat(2, 1fr); }
 }
