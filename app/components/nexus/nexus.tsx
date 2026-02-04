@@ -35,19 +35,10 @@ interface ServiceStatus {
 type IntelState = {
   creditLimitSgd: number;
   debtSgd: number;
-  mail: {
-    personal: number;
-    work: number;
-    school: number;
-  };
+  mail: { personal: number; work: number; school: number };
 };
 
 // ============ HELPERS ============
-
-const shellQuote = (value: string) => `'${value.replace(/'/g, `'"'"'`)}'`;
-
-const stripAnsi = (value: string) =>
-  value.replace(/\x1b\[[0-9;]*m/g, "").replace(/\r/g, "");
 
 function useLocalStorageState<T>(key: string, initialValue: T) {
   const [value, setValue] = useState<T>(initialValue);
@@ -56,17 +47,13 @@ function useLocalStorageState<T>(key: string, initialValue: T) {
     try {
       const stored = localStorage.getItem(key);
       if (stored) setValue(JSON.parse(stored) as T);
-    } catch {
-      // Ignore corrupted local data
-    }
+    } catch {}
   }, [key]);
 
   useEffect(() => {
     try {
       localStorage.setItem(key, JSON.stringify(value));
-    } catch {
-      // Ignore write errors
-    }
+    } catch {}
   }, [key, value]);
 
   return [value, setValue] as const;
@@ -80,7 +67,7 @@ export function Nexus() {
 
   const [terminalMode, setTerminalMode] = useState<"local" | "ssh">("local");
   const [sshHosts, setSshHosts] = useState<SshHost[]>([]);
-  const [selectedHost, setSelectedHost] = useState("GMI1");
+  const [selectedHost, setSelectedHost] = useState("GMI6");
 
   const [isConnected, setIsConnected] = useState(false);
   const [gpuData, setGpuData] = useState<GpuInfo[]>([]);
@@ -94,16 +81,11 @@ export function Nexus() {
   const [councilTopic, setCouncilTopic] = useState("");
   const [councilRunning, setCouncilRunning] = useState(false);
   const [councilLogs, setCouncilLogs] = useState<string[]>([]);
-  const councilBufferRef = useRef("");
 
   const [intel, setIntel] = useLocalStorageState<IntelState>("nexus-intel", {
     creditLimitSgd: 0,
     debtSgd: 2354.23,
-    mail: {
-      personal: 0,
-      work: 0,
-      school: 0,
-    },
+    mail: { personal: 0, work: 0, school: 0 },
   });
   const [editIntel, setEditIntel] = useState(false);
 
@@ -133,21 +115,14 @@ export function Nexus() {
         if (!res.ok) return;
         const data = await res.json();
         if (Array.isArray(data.hosts)) setSshHosts(data.hosts);
-      } catch {
-        // Ignore
-      }
+      } catch {}
     };
     loadHosts();
   }, []);
 
   const hostOptions = useMemo(() => {
     if (sshHosts.length > 0) return sshHosts;
-    return [
-      { name: "GMI1" },
-      { name: "GMI2" },
-      { name: "GMI3" },
-      { name: "GMI4" },
-    ];
+    return [{ name: "GMI6" }, { name: "GMI1" }, { name: "GMI2" }];
   }, [sshHosts]);
 
   useEffect(() => {
@@ -157,7 +132,7 @@ export function Nexus() {
     }
   }, [hostOptions, selectedHost]);
 
-  // ============ TERMINAL ============
+  // ============ TERMINAL (JSON Protocol) ============
 
   const initTerminal = useCallback(async () => {
     if (!terminalRef.current || xtermRef.current || !wsUrl) return;
@@ -168,23 +143,24 @@ export function Nexus() {
 
     const terminal = new Terminal({
       theme: {
-        background: "#0b0f14",
-        foreground: "#dfe9f3",
-        cursor: "#39fbd6",
-        cursorAccent: "#0b0f14",
-        black: "#0b0f14",
-        red: "#ff5566",
-        green: "#17f1a5",
-        yellow: "#f7b733",
-        blue: "#40c9ff",
-        magenta: "#ff5ef4",
-        cyan: "#39fbd6",
-        white: "#dfe9f3",
+        background: "#0a0e14",
+        foreground: "#b3b1ad",
+        cursor: "#e6b450",
+        cursorAccent: "#0a0e14",
+        black: "#01060e",
+        red: "#ea6c73",
+        green: "#91b362",
+        yellow: "#f9af4f",
+        blue: "#53bdfa",
+        magenta: "#fae994",
+        cyan: "#90e1c6",
+        white: "#c7c7c7",
       },
-      fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
-      fontSize: 12,
+      fontFamily: '"JetBrains Mono", "SF Mono", monospace',
+      fontSize: 13,
       cursorBlink: true,
       cursorStyle: "bar",
+      lineHeight: 1.2,
     });
 
     const fitAddon = new FitAddon();
@@ -192,39 +168,62 @@ export function Nexus() {
     terminal.loadAddon(new WebLinksAddon());
 
     terminal.open(terminalRef.current);
-    setTimeout(() => fitAddon.fit(), 120);
+    setTimeout(() => fitAddon.fit(), 100);
 
     xtermRef.current = terminal;
     fitAddonRef.current = fitAddon;
 
-    terminal.writeln("\x1b[36m⬢ NEXUS Terminal\x1b[0m");
-    terminal.writeln("\x1b[90mConnecting...\x1b[0m");
+    terminal.writeln("\x1b[38;5;214m⬢ NEXUS Terminal\x1b[0m");
+    terminal.writeln("\x1b[90mConnecting...\x1b[0m\n");
 
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
     ws.onopen = () => {
-      setIsConnected(true);
-      terminal.writeln("\x1b[32m● Connected\x1b[0m\n");
       const token = accessStore.accessCode;
       if (token) ws.send(JSON.stringify({ type: "auth", token }));
-      ws.send(
-        JSON.stringify({
-          type: "resize",
-          cols: terminal.cols,
-          rows: terminal.rows,
-        }),
-      );
     };
 
-    ws.onmessage = (e) => terminal.write(e.data);
+    ws.onmessage = (e) => {
+      try {
+        const msg = JSON.parse(e.data);
+        switch (msg.type) {
+          case "ready":
+            setIsConnected(true);
+            terminal.writeln("\x1b[32m● Connected\x1b[0m\n");
+            ws.send(
+              JSON.stringify({
+                type: "resize",
+                cols: terminal.cols,
+                rows: terminal.rows,
+              }),
+            );
+            break;
+          case "output":
+            terminal.write(msg.data);
+            break;
+          case "exit":
+            terminal.writeln(`\n\x1b[31m● Process exited (${msg.code})\x1b[0m`);
+            break;
+          case "error":
+            terminal.writeln(`\n\x1b[31m● Error: ${msg.message}\x1b[0m`);
+            break;
+        }
+      } catch {
+        // Raw text fallback
+        terminal.write(e.data);
+      }
+    };
+
     ws.onclose = () => {
       setIsConnected(false);
       terminal.writeln("\n\x1b[31m● Disconnected\x1b[0m");
     };
 
     terminal.onData((data: string) => {
-      if (ws.readyState === WebSocket.OPEN) ws.send(data);
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: "input", data }));
+      }
     });
 
     const resizeObserver = new ResizeObserver(() => {
@@ -257,75 +256,77 @@ export function Nexus() {
     return () => terminalCleanupRef.current?.();
   }, [initTerminal]);
 
-  const connectSsh = () => {
+  const sendTerminalCommand = (cmd: string) => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-    wsRef.current.send(`ssh ${selectedHost}\n`);
+    wsRef.current.send(JSON.stringify({ type: "input", data: cmd + "\n" }));
   };
 
-  const disconnectSsh = () => {
+  const connectSsh = () => sendTerminalCommand(`ssh ${selectedHost}`);
+  const disconnectSsh = () => sendTerminalCommand("exit");
+
+  // ============ GPU MONITORING (via terminal) ============
+
+  const fetchGpuStatus = useCallback(() => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-    wsRef.current.send("exit\n");
-  };
 
-  // ============ GPU MONITORING ============
+    // Create a temporary listener for GPU data
+    const gpuBuffer: string[] = [];
+    let capturing = false;
 
-  const fetchGpuStatus = useCallback(
-    (hostOverride?: string) => {
-      if (!wsUrl) return;
-      const host = hostOverride || selectedHost || "GMI1";
-      const ws = new WebSocket(wsUrl);
-      let outputBuffer = "";
-
-      ws.onopen = () => {
-        const token = accessStore.accessCode;
-        if (token) ws.send(JSON.stringify({ type: "auth", token }));
-        setTimeout(() => {
-          const remoteCmd =
-            "nvidia-smi --query-gpu=name,utilization.gpu,memory.used,memory.total,temperature.gpu --format=csv,noheader,nounits";
-          const cmd = `ssh ${host} ${shellQuote(
-            `${remoteCmd} 2>/dev/null && echo __END__`,
-          )}`;
-          ws.send(`${cmd}\n`);
-        }, 300);
-      };
-
-      ws.onmessage = (e) => {
-        outputBuffer += e.data;
-        if (outputBuffer.includes("__END__")) {
-          const clean = stripAnsi(outputBuffer.replace("__END__", ""));
-          const lines = clean
-            .split("\n")
-            .map((line) => line.trim())
-            .filter((line) => line.includes(","));
-          const gpus: GpuInfo[] = lines.map((line) => {
-            const parts = line.split(",").map((s) => s.trim());
-            return {
-              name: parts[0] || "Unknown GPU",
-              utilization: parseInt(parts[1]) || 0,
-              memory: {
-                used: parseInt(parts[2]) || 0,
-                total: parseInt(parts[3]) || 0,
-              },
-              temperature: parseInt(parts[4]) || 0,
-            };
-          });
-          if (gpus.length > 0) setGpuData(gpus);
-          ws.close();
+    const originalOnMessage = wsRef.current.onmessage;
+    wsRef.current.onmessage = (e) => {
+      try {
+        const msg = JSON.parse(e.data);
+        if (msg.type === "output") {
+          const data = msg.data;
+          if (data.includes("__GPU_START__")) {
+            capturing = true;
+            return;
+          }
+          if (data.includes("__GPU_END__")) {
+            capturing = false;
+            // Parse GPU data
+            const text = gpuBuffer.join("");
+            const lines = text
+              .split("\n")
+              .filter((l) => l.includes(",") && !l.includes("name"));
+            const gpus: GpuInfo[] = lines.map((line) => {
+              const parts = line.split(",").map((s) => s.trim());
+              return {
+                name: parts[0] || "GPU",
+                utilization: parseInt(parts[1]) || 0,
+                memory: {
+                  used: parseInt(parts[2]) || 0,
+                  total: parseInt(parts[3]) || 0,
+                },
+                temperature: parseInt(parts[4]) || 0,
+              };
+            });
+            if (gpus.length > 0) setGpuData(gpus);
+            // Restore original handler
+            if (wsRef.current) wsRef.current.onmessage = originalOnMessage;
+            return;
+          }
+          if (capturing) {
+            gpuBuffer.push(data);
+          }
         }
-      };
+      } catch {}
+      // Call original handler
+      if (originalOnMessage) originalOnMessage.call(wsRef.current, e);
+    };
 
-      ws.onerror = () => {
-        ws.close();
-      };
-    },
-    [accessStore.accessCode, selectedHost, wsUrl],
-  );
+    // Send command to fetch GPU info
+    const cmd = `echo __GPU_START__ && ssh ${selectedHost} "nvidia-smi --query-gpu=name,utilization.gpu,memory.used,memory.total,temperature.gpu --format=csv,noheader,nounits 2>/dev/null" && echo __GPU_END__`;
+    sendTerminalCommand(cmd);
 
-  useEffect(() => {
-    fetchGpuStatus(selectedHost);
-    const interval = setInterval(() => fetchGpuStatus(selectedHost), 30000);
-    return () => clearInterval(interval);
-  }, [fetchGpuStatus, selectedHost]);
+    // Timeout: restore handler after 10s
+    setTimeout(() => {
+      if (wsRef.current && wsRef.current.onmessage !== originalOnMessage) {
+        wsRef.current.onmessage = originalOnMessage;
+      }
+    }, 10000);
+  }, [selectedHost]);
 
   // ============ SERVICES ============
 
@@ -350,9 +351,7 @@ export function Nexus() {
             return svc;
           }),
         );
-      } catch {
-        // Ignore
-      }
+      } catch {}
     };
 
     checkServices();
@@ -360,59 +359,64 @@ export function Nexus() {
     return () => clearInterval(interval);
   }, []);
 
-  // ============ THREE MINDS ============
+  // ============ THREE MINDS (Local) ============
 
-  const startCouncil = async () => {
-    if (!councilTopic.trim() || councilRunning || !wsUrl) return;
+  const startCouncil = () => {
+    if (!councilTopic.trim() || councilRunning) return;
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
 
     setCouncilRunning(true);
     setCouncilLogs([]);
-    councilBufferRef.current = "";
 
-    const ws = new WebSocket(wsUrl);
-    ws.onopen = () => {
-      const token = accessStore.accessCode;
-      if (token) ws.send(JSON.stringify({ type: "auth", token }));
-      setTimeout(() => {
-        const topic = councilTopic.replace(/\r?\n/g, " ").trim();
-        const remoteCmd = `three-minds ${shellQuote(
-          topic,
-        )} --quiet 2>&1; echo __END__`;
-        const cmd = `ssh ${selectedHost} ${shellQuote(remoteCmd)}`;
-        ws.send(`${cmd}\n`);
-      }, 300);
+    // Capture output for council
+    const councilBuffer: string[] = [];
+    let capturing = false;
+
+    const originalOnMessage = wsRef.current.onmessage;
+    wsRef.current.onmessage = (e) => {
+      try {
+        const msg = JSON.parse(e.data);
+        if (msg.type === "output") {
+          const data = msg.data;
+          if (data.includes("__COUNCIL_START__")) {
+            capturing = true;
+            return;
+          }
+          if (data.includes("__COUNCIL_END__")) {
+            capturing = false;
+            setCouncilRunning(false);
+            if (wsRef.current) wsRef.current.onmessage = originalOnMessage;
+            return;
+          }
+          if (capturing) {
+            // Add to logs, filtering ANSI and empty lines
+            const clean = data
+              .replace(/\x1b\[[0-9;]*m/g, "")
+              .replace(/\r/g, "");
+            const lines = clean.split("\n").filter((l: string) => l.trim());
+            if (lines.length > 0) {
+              setCouncilLogs((prev) => [...prev, ...lines].slice(-50));
+            }
+          }
+        }
+      } catch {}
+      if (originalOnMessage) originalOnMessage.call(wsRef.current, e);
     };
 
-    ws.onmessage = (e) => {
-      councilBufferRef.current += e.data;
-      if (councilBufferRef.current.includes("__END__")) {
-        const clean = stripAnsi(
-          councilBufferRef.current.replace("__END__", ""),
-        );
-        const lines = clean
-          .split("\n")
-          .map((line) => line.trim())
-          .filter(Boolean);
-        setCouncilLogs(lines);
+    // Run three-minds locally
+    const escapedTopic = councilTopic.replace(/'/g, "'\"'\"'");
+    const cmd = `echo __COUNCIL_START__ && three-minds '${escapedTopic}' --quiet 2>&1; echo __COUNCIL_END__`;
+    sendTerminalCommand(cmd);
+
+    // Timeout after 5 minutes
+    setTimeout(() => {
+      if (councilRunning) {
         setCouncilRunning(false);
-        ws.close();
-        return;
+        if (wsRef.current && wsRef.current.onmessage !== originalOnMessage) {
+          wsRef.current.onmessage = originalOnMessage;
+        }
       }
-
-      const parts = councilBufferRef.current.split("\n");
-      councilBufferRef.current = parts.pop() || "";
-      if (parts.length) {
-        setCouncilLogs((prev) => [
-          ...prev,
-          ...parts.map((line) => stripAnsi(line)).filter(Boolean),
-        ]);
-      }
-    };
-
-    ws.onerror = () => {
-      setCouncilRunning(false);
-      ws.close();
-    };
+    }, 300000);
   };
 
   const commitSha = process.env.COMMIT_SHA || "dev";
@@ -422,125 +426,108 @@ export function Nexus() {
 
   return (
     <div className={styles.nexus}>
-      <div className={styles.atmoGrid} />
+      <div className={styles.gridOverlay} />
 
       {/* Header */}
       <header className={styles.header}>
         <div className={styles.brand}>
-          <OpenClawLogo className={styles.brandLogo} />
-          <div className={styles.brandText}>
-            <span className={styles.brandTitle}>OPENCLAW NEXUS</span>
-            <span className={styles.brandSub}>
-              {gatewayModel !== "-" ? gatewayModel : "CONSOLE"}
-            </span>
+          <OpenClawLogo className={styles.logo} />
+          <div className={styles.brandInfo}>
+            <h1>NEXUS</h1>
+            <span>{gatewayModel !== "-" ? gatewayModel : "CONSOLE"}</span>
           </div>
         </div>
-        <div className={styles.headerRight}>
+        <div className={styles.headerMeta}>
           <span
-            className={`${styles.connStatus} ${
-              isConnected ? styles.online : ""
-            }`}
+            className={`${styles.status} ${isConnected ? styles.live : ""}`}
           >
-            {isConnected ? "● LIVE" : "○ OFFLINE"}
+            {isConnected ? "LIVE" : "OFFLINE"}
           </span>
-          <div className={styles.hostPill}>{selectedHost}</div>
+          <span className={styles.host}>{selectedHost}</span>
           <a
-            className={styles.commitBadge}
             href={commitUrl}
             target="_blank"
             rel="noopener noreferrer"
+            className={styles.version}
           >
             {shortSha}
           </a>
           <button
-            className={styles.exitBtn}
             onClick={() => navigate(Path.Home)}
+            className={styles.exitBtn}
           >
-            Exit
+            EXIT
           </button>
         </div>
       </header>
 
-      {/* Main Grid */}
-      <main className={styles.grid}>
-        {/* Left: Chat */}
-        <section className={styles.chatSection}>
-          <div className={styles.sectionHeader}>
-            <span>Core Agent Chat</span>
-          </div>
-          <div className={styles.chatShell}>
+      {/* Main Content */}
+      <main className={styles.main}>
+        {/* Chat Panel */}
+        <section className={styles.chatPanel}>
+          <header>
+            <span className={styles.panelTitle}>AGENT</span>
+          </header>
+          <div className={styles.chatContent}>
             <Chat />
           </div>
         </section>
 
-        {/* Right Column */}
-        <div className={styles.rightCol}>
-          {/* Three Minds */}
-          <section className={styles.councilSection}>
-            <div className={styles.sectionHeader}>
-              <span>Three Minds Council</span>
-              <div className={styles.agentBadges}>
-                <span className={styles.agentBadge} data-provider="openai">
-                  <OpenAILogo />
-                </span>
-                <span className={styles.agentBadge} data-provider="google">
-                  <GeminiLogo />
-                </span>
-                <span className={styles.agentBadge} data-provider="anthropic">
-                  <ClaudeLogo />
-                </span>
+        {/* Right Side */}
+        <aside className={styles.sidebar}>
+          {/* Council */}
+          <section className={styles.panel}>
+            <header>
+              <span className={styles.panelTitle}>THREE MINDS</span>
+              <div className={styles.modelBadges}>
+                <OpenAILogo />
+                <GeminiLogo />
+                <ClaudeLogo />
               </div>
-            </div>
-            <div className={styles.councilBody}>
+            </header>
+            <div className={styles.councilContent}>
               <div className={styles.councilInput}>
                 <input
-                  type="text"
                   value={councilTopic}
                   onChange={(e) => setCouncilTopic(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && startCouncil()}
-                  placeholder="Enter discussion topic..."
+                  placeholder="Discussion topic..."
                   disabled={councilRunning}
                 />
                 <button
                   onClick={startCouncil}
                   disabled={councilRunning || !councilTopic.trim()}
                 >
-                  {councilRunning ? "..." : "Run"}
+                  {councilRunning ? "..." : "GO"}
                 </button>
               </div>
-              <div className={styles.councilOutput}>
+              <div className={styles.councilLog}>
                 {councilLogs.length === 0 ? (
-                  <span className={styles.placeholder}>
-                    Awaiting topic on {selectedHost}
-                  </span>
+                  <span className={styles.empty}>Awaiting topic...</span>
                 ) : (
-                  councilLogs
-                    .slice(-8)
-                    .map((line, i) => <div key={i}>{line}</div>)
+                  councilLogs.slice(-12).map((l, i) => <div key={i}>{l}</div>)
                 )}
               </div>
             </div>
           </section>
 
           {/* Terminal */}
-          <section className={styles.terminalSection}>
-            <div className={styles.sectionHeader}>
-              <span>Terminal</span>
-              <div className={styles.terminalControls}>
-                <div className={styles.modeSwitch}>
-                  <button
-                    className={terminalMode === "local" ? styles.active : ""}
-                    onClick={() => setTerminalMode("local")}
-                  >
-                    LOCAL
-                  </button>
-                  <button
-                    className={terminalMode === "ssh" ? styles.active : ""}
-                    onClick={() => setTerminalMode("ssh")}
-                  >
-                    SSH
-                  </button>
-                </div>
+          <section className={styles.panel + " " + styles.terminalPanel}>
+            <header>
+              <span className={styles.panelTitle}>TERMINAL</span>
+              <div className={styles.termControls}>
+                <button
+                  className={terminalMode === "local" ? styles.active : ""}
+                  onClick={() => setTerminalMode("local")}
+                >
+                  LOCAL
+                </button>
+                <button
+                  className={terminalMode === "ssh" ? styles.active : ""}
+                  onClick={() => setTerminalMode("ssh")}
+                >
+                  SSH
+                </button>
                 <select
                   value={selectedHost}
                   onChange={(e) => setSelectedHost(e.target.value)}
@@ -551,88 +538,86 @@ export function Nexus() {
                     </option>
                   ))}
                 </select>
-                <button onClick={connectSsh} disabled={terminalMode !== "ssh"}>
-                  Connect
-                </button>
+                {terminalMode === "ssh" && (
+                  <>
+                    <button onClick={connectSsh}>Connect</button>
+                    <button onClick={disconnectSsh}>Exit</button>
+                  </>
+                )}
               </div>
-            </div>
-            <div className={styles.terminalShell}>
-              <div className={styles.terminalContainer} ref={terminalRef} />
+            </header>
+            <div className={styles.terminalWrap}>
+              <div ref={terminalRef} className={styles.terminal} />
             </div>
           </section>
 
-          {/* Intel Row */}
-          <section className={styles.intelSection}>
+          {/* Intel Grid */}
+          <section className={styles.intelGrid}>
             {/* Services */}
             <div className={styles.intelCard}>
-              <div className={styles.cardTitle}>Services</div>
-              <div className={styles.serviceList}>
-                {services.map((svc) => (
-                  <div key={svc.name} className={styles.serviceItem}>
-                    <span className={`${styles.dot} ${styles[svc.status]}`} />
-                    <span className={styles.svcName}>{svc.name}</span>
-                  </div>
-                ))}
-              </div>
+              <h4>SERVICES</h4>
+              {services.map((s) => (
+                <div key={s.name} className={styles.svcRow}>
+                  <span className={`${styles.dot} ${styles[s.status]}`} />
+                  <span>{s.name}</span>
+                </div>
+              ))}
             </div>
 
             {/* Finance */}
             <div className={styles.intelCard}>
-              <div className={styles.cardTitle}>
-                Finance
-                <button onClick={() => setEditIntel((v) => !v)}>
-                  {editIntel ? "Done" : "Edit"}
+              <h4>
+                FINANCE{" "}
+                <button onClick={() => setEditIntel(!editIntel)}>
+                  {editIntel ? "OK" : "Edit"}
                 </button>
-              </div>
+              </h4>
               {editIntel ? (
-                <div className={styles.editGrid}>
+                <>
                   <label>
-                    Limit
+                    Limit{" "}
                     <input
                       type="number"
                       value={intel.creditLimitSgd}
                       onChange={(e) =>
                         setIntel((p) => ({
                           ...p,
-                          creditLimitSgd: Number(e.target.value),
+                          creditLimitSgd: +e.target.value,
                         }))
                       }
                     />
                   </label>
                   <label>
-                    Debt
+                    Debt{" "}
                     <input
                       type="number"
                       value={intel.debtSgd}
                       onChange={(e) =>
-                        setIntel((p) => ({
-                          ...p,
-                          debtSgd: Number(e.target.value),
-                        }))
+                        setIntel((p) => ({ ...p, debtSgd: +e.target.value }))
                       }
                     />
                   </label>
-                </div>
+                </>
               ) : (
-                <div className={styles.financeDisplay}>
-                  <div>
+                <>
+                  <div className={styles.metric}>
                     <span>Limit</span>
                     <strong>{intel.creditLimitSgd.toLocaleString()} SGD</strong>
                   </div>
-                  <div>
+                  <div className={styles.metric}>
                     <span>Debt</span>
-                    <strong className={styles.debt}>
+                    <strong className={styles.red}>
                       {intel.debtSgd.toLocaleString()} SGD
                     </strong>
                   </div>
-                </div>
+                </>
               )}
             </div>
 
             {/* Mail */}
             <div className={styles.intelCard}>
-              <div className={styles.cardTitle}>Unread Mail</div>
-              <div className={styles.mailGrid}>
+              <h4>MAIL</h4>
+              <div className={styles.mailRow}>
                 <div>
                   <span>Personal</span>
                   <strong>{intel.mail.personal}</strong>
@@ -650,31 +635,30 @@ export function Nexus() {
 
             {/* GPU */}
             <div className={styles.intelCard}>
-              <div className={styles.cardTitle}>
-                GPU ({selectedHost})
-                <button onClick={() => fetchGpuStatus(selectedHost)}>
-                  Refresh
-                </button>
-              </div>
+              <h4>
+                GPU <span className={styles.hostTag}>{selectedHost}</span>{" "}
+                <button onClick={fetchGpuStatus}>Refresh</button>
+              </h4>
               {gpuData.length === 0 ? (
-                <span className={styles.placeholder}>Loading...</span>
+                <span className={styles.empty}>No data</span>
               ) : (
-                <div className={styles.gpuList}>
-                  {gpuData.slice(0, 2).map((gpu, i) => (
-                    <div key={i} className={styles.gpuItem}>
-                      <span className={styles.gpuName}>{gpu.name}</span>
-                      <span>{gpu.utilization}%</span>
-                      <span>{(gpu.memory.used / 1024).toFixed(1)}G</span>
-                      <span className={gpu.temperature > 75 ? styles.hot : ""}>
-                        {gpu.temperature}°C
-                      </span>
-                    </div>
-                  ))}
-                </div>
+                gpuData.slice(0, 4).map((g, i) => (
+                  <div key={i} className={styles.gpuRow}>
+                    <span className={styles.gpuName}>{g.name}</span>
+                    <span>{g.utilization}%</span>
+                    <span>
+                      {(g.memory.used / 1024).toFixed(1)}G/
+                      {(g.memory.total / 1024).toFixed(0)}G
+                    </span>
+                    <span className={g.temperature > 75 ? styles.red : ""}>
+                      {g.temperature}°C
+                    </span>
+                  </div>
+                ))
               )}
             </div>
           </section>
-        </div>
+        </aside>
       </main>
     </div>
   );

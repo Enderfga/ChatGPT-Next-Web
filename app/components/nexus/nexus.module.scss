@@ -1,55 +1,54 @@
-@import url("https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;600;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap");
 
-$bg: #0b0e13;
-$bg-2: #0f141d;
-$panel: #121826;
-$line: rgba(57, 251, 214, 0.15);
-$line-weak: rgba(57, 251, 214, 0.08);
-$accent: #39fbd6;
-$accent-2: #ffb400;
-$blue: #40c9ff;
-$green: #17f1a5;
-$red: #ff5566;
-$text: #dfe9f3;
-$text-dim: rgba(223, 233, 243, 0.6);
-$text-soft: rgba(223, 233, 243, 0.4);
+// Ayu Dark inspired palette
+$bg-deep: #0a0e14;
+$bg: #0d1117;
+$bg-elevated: #161b22;
+$bg-surface: #1c2128;
+$border: #30363d;
+$border-accent: #e6b450;
+$text: #c9d1d9;
+$text-muted: #8b949e;
+$text-dim: #484f58;
+$accent: #e6b450;
+$accent-glow: rgba(230, 180, 80, 0.3);
+$green: #7ee787;
+$red: #f85149;
+$blue: #58a6ff;
+$cyan: #90e1c6;
 
 .nexus {
   position: fixed;
   inset: 0;
-  background: radial-gradient(circle at top right, rgba(64, 201, 255, 0.08), transparent 55%),
-    radial-gradient(circle at bottom left, rgba(255, 180, 0, 0.06), transparent 45%),
-    $bg;
+  background: $bg-deep;
   color: $text;
-  font-family: "Oxanium", "IBM Plex Mono", sans-serif;
+  font-family: "Space Grotesk", system-ui, sans-serif;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   z-index: 9999;
 }
 
-.atmoGrid {
+.gridOverlay {
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(57, 251, 214, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(57, 251, 214, 0.05) 1px, transparent 1px);
-  background-size: 40px 40px;
-  opacity: 0.4;
+    linear-gradient(rgba(230, 180, 80, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(230, 180, 80, 0.02) 1px, transparent 1px);
+  background-size: 60px 60px;
   pointer-events: none;
 }
 
 // ========== HEADER ==========
 
 .header {
-  height: 48px;
-  padding: 0 16px;
-  border-bottom: 1px solid $line;
+  height: 52px;
+  padding: 0 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(11, 14, 19, 0.9);
-  backdrop-filter: blur(10px);
+  border-bottom: 1px solid $border;
+  background: linear-gradient(180deg, $bg-elevated 0%, $bg-deep 100%);
   flex-shrink: 0;
   z-index: 10;
 }
@@ -57,81 +56,93 @@ $text-soft: rgba(223, 233, 243, 0.4);
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-}
-
-.brandLogo {
-  width: 28px;
-  height: 28px;
-}
-
-.brandText {
-  display: flex;
-  flex-direction: column;
-}
-
-.brandTitle {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 2px;
-}
-
-.brandSub {
-  font-size: 9px;
-  color: $text-soft;
-  letter-spacing: 1px;
-}
-
-.headerRight {
-  display: flex;
-  align-items: center;
   gap: 12px;
 }
 
-.connStatus {
-  font-size: 10px;
-  color: $red;
-  letter-spacing: 1px;
+.logo {
+  width: 32px;
+  height: 32px;
+  filter: drop-shadow(0 0 8px $accent-glow);
+}
 
-  &.online {
-    color: $green;
+.brandInfo {
+  h1 {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    color: $accent;
+    margin: 0;
+    line-height: 1;
+  }
+  span {
+    font-size: 10px;
+    color: $text-muted;
+    letter-spacing: 1px;
+    font-family: "JetBrains Mono", monospace;
   }
 }
 
-.hostPill {
-  padding: 3px 8px;
-  border-radius: 999px;
-  border: 1px solid $line;
-  color: $accent;
-  font-size: 10px;
-  font-family: "IBM Plex Mono", monospace;
+.headerMeta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
-.commitBadge {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 10px;
-  color: $text-soft;
-  text-decoration: none;
-  border: 1px solid $line-weak;
-  padding: 3px 6px;
+.status {
+  font-size: 11px;
+  font-weight: 600;
+  color: $red;
+  letter-spacing: 1px;
+
+  &::before {
+    content: "○ ";
+  }
+
+  &.live {
+    color: $green;
+    &::before {
+      content: "● ";
+    }
+  }
+}
+
+.host {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  color: $cyan;
+  padding: 4px 10px;
+  border: 1px solid $border;
   border-radius: 4px;
-  transition: all 0.2s;
+  background: $bg-surface;
+}
+
+.version {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  color: $text-dim;
+  text-decoration: none;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  transition: all 0.15s;
 
   &:hover {
     color: $accent;
-    border-color: $accent;
+    border-color: $border;
   }
 }
 
 .exitBtn {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: $text-muted;
   background: transparent;
-  border: 1px solid $line;
-  color: $text-dim;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 10px;
+  border: 1px solid $border;
+  padding: 6px 14px;
+  border-radius: 4px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.15s;
 
   &:hover {
     color: $red;
@@ -139,40 +150,42 @@ $text-soft: rgba(223, 233, 243, 0.4);
   }
 }
 
-// ========== MAIN GRID ==========
+// ========== MAIN LAYOUT ==========
 
-.grid {
+.main {
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr 420px;
-  gap: 12px;
-  padding: 12px;
+  grid-template-columns: 1fr 440px;
+  gap: 16px;
+  padding: 16px;
   overflow: hidden;
 }
 
-.sectionHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  border-bottom: 1px solid $line-weak;
-  font-size: 11px;
-  letter-spacing: 1px;
-  color: $text-dim;
-}
+// ========== CHAT PANEL ==========
 
-// ========== CHAT SECTION ==========
-
-.chatSection {
+.chatPanel {
   display: flex;
   flex-direction: column;
-  background: $panel;
-  border: 1px solid $line-weak;
-  border-radius: 12px;
+  background: $bg;
+  border: 1px solid $border;
+  border-radius: 8px;
   overflow: hidden;
+
+  > header {
+    padding: 10px 14px;
+    border-bottom: 1px solid $border;
+    background: $bg-elevated;
+  }
 }
 
-.chatShell {
+.panelTitle {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: $text-muted;
+}
+
+.chatContent {
   flex: 1;
   overflow: hidden;
 
@@ -182,66 +195,51 @@ $text-soft: rgba(223, 233, 243, 0.4);
   }
 }
 
-// ========== RIGHT COLUMN ==========
+// ========== SIDEBAR ==========
 
-.rightCol {
+.sidebar {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   overflow: hidden;
 }
 
-// ========== COUNCIL SECTION ==========
-
-.councilSection {
-  background: $panel;
-  border: 1px solid $line-weak;
-  border-radius: 12px;
+.panel {
+  background: $bg;
+  border: 1px solid $border;
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
-  min-height: 140px;
+
+  > header {
+    padding: 10px 14px;
+    border-bottom: 1px solid $border;
+    background: $bg-elevated;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
 }
 
-.agentBadges {
+// ========== COUNCIL ==========
+
+.modelBadges {
   display: flex;
   gap: 6px;
-}
-
-.agentBadge {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  border: 1px solid transparent;
 
   svg {
-    width: 12px;
-    height: 12px;
-  }
-
-  &[data-provider="openai"] {
-    border-color: rgba(16, 163, 127, 0.5);
-    background: rgba(16, 163, 127, 0.15);
-  }
-
-  &[data-provider="google"] {
-    border-color: rgba(66, 133, 244, 0.5);
-    background: rgba(66, 133, 244, 0.15);
-  }
-
-  &[data-provider="anthropic"] {
-    border-color: rgba(204, 150, 96, 0.5);
-    background: rgba(204, 150, 96, 0.15);
+    width: 16px;
+    height: 16px;
+    opacity: 0.7;
   }
 }
 
-.councilBody {
-  flex: 1;
+.councilContent {
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  padding: 10px;
-  gap: 8px;
+  gap: 10px;
+  max-height: 180px;
 }
 
 .councilInput {
@@ -250,32 +248,38 @@ $text-soft: rgba(223, 233, 243, 0.4);
 
   input {
     flex: 1;
-    background: $bg-2;
-    border: 1px solid $line-weak;
-    border-radius: 6px;
-    padding: 6px 10px;
+    background: $bg-surface;
+    border: 1px solid $border;
+    border-radius: 4px;
+    padding: 8px 12px;
     color: $text;
-    font-size: 11px;
+    font-size: 12px;
     outline: none;
+    font-family: inherit;
 
     &:focus {
       border-color: $accent;
     }
 
     &::placeholder {
-      color: $text-soft;
+      color: $text-dim;
     }
   }
 
   button {
-    background: linear-gradient(135deg, rgba(57, 251, 214, 0.8), rgba(64, 201, 255, 0.8));
+    background: $accent;
     border: none;
-    color: $bg;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-size: 10px;
+    color: $bg-deep;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 11px;
     font-weight: 600;
     cursor: pointer;
+    transition: all 0.15s;
+
+    &:hover:not(:disabled) {
+      filter: brightness(1.1);
+    }
 
     &:disabled {
       opacity: 0.5;
@@ -284,179 +288,178 @@ $text-soft: rgba(223, 233, 243, 0.4);
   }
 }
 
-.councilOutput {
+.councilLog {
   flex: 1;
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 10px;
-  line-height: 1.5;
-  color: $text-dim;
   overflow-y: auto;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  color: $text-muted;
 
   div {
     padding: 2px 0;
-    border-bottom: 1px dashed $line-weak;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
   }
 }
 
-.placeholder {
-  color: $text-soft;
-  font-size: 10px;
+.empty {
+  color: $text-dim;
+  font-size: 11px;
+  font-style: italic;
 }
 
-// ========== TERMINAL SECTION ==========
+// ========== TERMINAL ==========
 
-.terminalSection {
+.terminalPanel {
   flex: 1;
-  background: $panel;
-  border: 1px solid $line-weak;
-  border-radius: 12px;
-  display: flex;
-  flex-direction: column;
   min-height: 200px;
-  overflow: hidden;
 }
 
-.terminalControls {
+.termControls {
   display: flex;
   align-items: center;
-  gap: 8px;
-}
-
-.modeSwitch {
-  display: flex;
-  gap: 4px;
+  gap: 6px;
 
   button {
     background: transparent;
-    border: 1px solid $line-weak;
-    color: $text-soft;
-    padding: 3px 8px;
+    border: 1px solid $border;
+    color: $text-muted;
+    padding: 4px 10px;
     border-radius: 4px;
-    font-size: 9px;
+    font-size: 10px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.15s;
 
     &.active {
       color: $accent;
       border-color: $accent;
-      background: rgba(57, 251, 214, 0.1);
+      background: rgba(230, 180, 80, 0.1);
+    }
+
+    &:hover:not(.active) {
+      border-color: $text-dim;
+    }
+  }
+
+  select {
+    background: $bg-surface;
+    border: 1px solid $border;
+    border-radius: 4px;
+    color: $text;
+    font-size: 10px;
+    padding: 4px 8px;
+    outline: none;
+    font-family: "JetBrains Mono", monospace;
+
+    option {
+      background: $bg-deep;
     }
   }
 }
 
-.terminalControls select {
-  background: $bg-2;
-  border: 1px solid $line-weak;
-  border-radius: 4px;
-  color: $text;
-  font-size: 10px;
-  padding: 3px 6px;
-  outline: none;
-
-  option {
-    background: $bg;
-  }
-}
-
-.terminalControls > button {
-  background: transparent;
-  border: 1px solid $line-weak;
-  color: $text-dim;
-  padding: 3px 8px;
-  border-radius: 4px;
-  font-size: 9px;
-  cursor: pointer;
-
-  &:hover:not(:disabled) {
-    color: $accent;
-    border-color: $accent;
-  }
-
-  &:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-}
-
-.terminalShell {
+.terminalWrap {
   flex: 1;
   overflow: hidden;
 }
 
-.terminalContainer {
+.terminal {
   height: 100%;
-  padding: 6px;
-  background: $bg;
+  padding: 8px;
+  background: $bg-deep;
 
   :global(.xterm) {
     height: 100%;
   }
 }
 
-// ========== INTEL SECTION ==========
+// ========== INTEL GRID ==========
 
-.intelSection {
+.intelGrid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }
 
 .intelCard {
-  background: $panel;
-  border: 1px solid $line-weak;
-  border-radius: 10px;
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
+  background: $bg;
+  border: 1px solid $border;
+  border-radius: 8px;
+  padding: 12px;
 
-.cardTitle {
-  font-size: 10px;
-  letter-spacing: 1px;
-  color: $accent;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  h4 {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: $text-dim;
+    margin: 0 0 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 
-  button {
-    background: transparent;
-    border: 1px solid $line-weak;
-    color: $text-soft;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 9px;
-    cursor: pointer;
+    button {
+      margin-left: auto;
+      background: transparent;
+      border: 1px solid $border;
+      color: $text-dim;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 9px;
+      cursor: pointer;
 
-    &:hover {
-      color: $accent;
-      border-color: $accent;
+      &:hover {
+        color: $accent;
+        border-color: $accent;
+      }
+    }
+  }
+
+  label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10px;
+    color: $text-muted;
+    margin-bottom: 6px;
+
+    input {
+      width: 80px;
+      background: $bg-surface;
+      border: 1px solid $border;
+      border-radius: 3px;
+      padding: 4px 6px;
+      color: $text;
+      font-size: 11px;
+      text-align: right;
+      font-family: "JetBrains Mono", monospace;
     }
   }
 }
 
-.serviceList {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.hostTag {
+  font-family: "JetBrains Mono", monospace;
+  color: $cyan;
+  font-weight: 400;
 }
 
-.serviceItem {
+.svcRow {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 9px;
+  gap: 8px;
+  font-size: 10px;
+  margin-bottom: 4px;
+  font-family: "JetBrains Mono", monospace;
+  color: $text-muted;
 }
 
 .dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: $text-soft;
+  background: $text-dim;
 
   &.running {
     background: $green;
-    box-shadow: 0 0 6px rgba(23, 241, 165, 0.6);
+    box-shadow: 0 0 6px rgba(126, 231, 135, 0.5);
   }
 
   &.stopped {
@@ -464,104 +467,63 @@ $text-soft: rgba(223, 233, 243, 0.4);
   }
 
   &.unknown {
-    background: $accent-2;
+    background: $accent;
   }
 }
 
-.svcName {
-  color: $text-dim;
-  font-family: "IBM Plex Mono", monospace;
-}
-
-.financeDisplay {
+.metric {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  justify-content: space-between;
+  font-size: 11px;
+  margin-bottom: 4px;
 
-  div {
-    display: flex;
-    justify-content: space-between;
-    font-size: 10px;
+  span {
+    color: $text-muted;
+  }
 
-    span {
-      color: $text-soft;
-    }
-
-    strong {
-      color: $text;
-      font-family: "IBM Plex Mono", monospace;
-    }
+  strong {
+    font-family: "JetBrains Mono", monospace;
+    color: $text;
   }
 }
 
-.debt {
+.red {
   color: $red !important;
 }
 
-.editGrid {
+.mailRow {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  gap: 12px;
 
-  label {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 9px;
-    color: $text-soft;
-
-    input {
-      width: 80px;
-      background: $bg-2;
-      border: 1px solid $line-weak;
-      border-radius: 4px;
-      padding: 3px 6px;
-      color: $text;
-      font-size: 10px;
-      text-align: right;
-    }
-  }
-}
-
-.mailGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-  text-align: center;
-
-  div {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
+  > div {
+    flex: 1;
+    text-align: center;
 
     span {
-      font-size: 8px;
-      color: $text-soft;
+      display: block;
+      font-size: 9px;
+      color: $text-dim;
+      margin-bottom: 2px;
     }
 
     strong {
-      font-size: 14px;
+      font-size: 16px;
+      font-family: "JetBrains Mono", monospace;
       color: $text;
-      font-family: "IBM Plex Mono", monospace;
     }
   }
 }
 
-.gpuList {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.gpuItem {
+.gpuRow {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 9px;
-  font-family: "IBM Plex Mono", monospace;
+  gap: 10px;
+  font-size: 10px;
+  margin-bottom: 6px;
+  font-family: "JetBrains Mono", monospace;
 
   span {
-    color: $text-dim;
+    color: $text-muted;
   }
 }
 
@@ -573,29 +535,26 @@ $text-soft: rgba(223, 233, 243, 0.4);
   color: $blue !important;
 }
 
-.hot {
-  color: $red !important;
-}
-
 // ========== RESPONSIVE ==========
 
-@media (max-width: 1000px) {
-  .grid {
+@media (max-width: 1100px) {
+  .main {
     grid-template-columns: 1fr;
     grid-template-rows: 1fr auto;
   }
 
-  .rightCol {
-    max-height: 50vh;
+  .sidebar {
+    max-height: 45vh;
+    overflow-y: auto;
   }
 
-  .intelSection {
+  .intelGrid {
     grid-template-columns: repeat(4, 1fr);
   }
 }
 
-@media (max-width: 700px) {
-  .intelSection {
+@media (max-width: 800px) {
+  .intelGrid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
