@@ -495,13 +495,8 @@ export function Nexus() {
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const isLocal =
-          typeof window !== "undefined" &&
-          ["localhost", "127.0.0.1"].includes(window.location.hostname);
-        const statusUrl = isLocal
-          ? "http://localhost:18795/sasha-doctor/status"
-          : "https://api.enderfga.cn/sasha-doctor/status";
-        const res = await fetch(statusUrl, { cache: "no-store" });
+        // Use API proxy to avoid CORS issues in production
+        const res = await fetch("/api/agent-status", { cache: "no-store" });
         if (res.ok) {
           const data = await res.json();
           setAgentStatus({
