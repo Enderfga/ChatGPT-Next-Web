@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const RETENTION_DAYS = 7;
+const DEFAULT_RETENTION_DAYS = 7;
 
 export async function GET(req: NextRequest) {
   // Verify cron secret for security
@@ -8,6 +8,11 @@ export async function GET(req: NextRequest) {
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  // Allow override for testing (e.g., ?days=0 to delete all)
+  const daysParam = req.nextUrl.searchParams.get("days");
+  const retentionDays =
+    daysParam !== null ? parseInt(daysParam, 10) : DEFAULT_RETENTION_DAYS;
 
   const token = process.env.BLOB_READ_WRITE_TOKEN;
   if (!token) {
@@ -19,7 +24,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - RETENTION_DAYS);
+    cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
 
     let deleted = 0;
     let cursor: string | undefined;
