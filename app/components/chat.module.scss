@@ -629,14 +629,35 @@
   flex: 1;
   border-radius: 10px;
   border: var(--border-in-light);
+  position: relative;
 }
 
 .chat-input-panel-inner-attach {
   padding-bottom: 80px;
 }
 
+.chat-input-panel-inner-dragover {
+  border: 2px dashed var(--primary);
+  background-color: var(--second);
+}
+
 .chat-input-panel-inner:has(.chat-input:focus) {
   border: 1px solid var(--primary);
+}
+
+.drop-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(99, 102, 241, 0.08);
+  color: var(--primary);
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 10px;
+  z-index: 10;
+  pointer-events: none;
 }
 
 .chat-input {
@@ -648,7 +669,7 @@
   background-color: var(--white);
   color: var(--black);
   font-family: inherit;
-  padding: 10px 90px 10px 14px;
+  padding: 10px 120px 10px 14px;
   resize: none;
   outline: none;
   box-sizing: border-box;
@@ -656,6 +677,84 @@
 }
 
 .chat-input:focus {
+}
+
+.chat-input-attach {
+  position: absolute;
+  right: 68px;
+  bottom: 34px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--black);
+  opacity: 0.5;
+  transition: opacity 0.2s;
+  border-radius: 4px;
+
+  &:hover {
+    opacity: 1;
+  }
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.attach-files {
+  position: absolute;
+  left: 14px;
+  bottom: 32px;
+  right: 130px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.attach-file {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background-color: var(--second);
+  border: var(--border-in-light);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--black);
+  max-width: 200px;
+  animation: slide-in ease 0.3s;
+}
+
+.attach-file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attach-file-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--black);
+  opacity: 0.5;
+  flex-shrink: 0;
+
+  &:hover {
+    opacity: 1;
+  }
+
+  svg {
+    width: 12px;
+    height: 12px;
+  }
 }
 
 .chat-input-send {
@@ -674,6 +773,11 @@
 
   .chat-input-send {
     bottom: 30px;
+  }
+
+  .chat-input-attach {
+    right: 66px;
+    bottom: 32px;
   }
 }
 

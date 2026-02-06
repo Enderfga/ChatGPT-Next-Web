@@ -48,6 +48,7 @@ import PluginIcon from "../icons/plugin.svg";
 import ShortcutkeyIcon from "../icons/shortcutkey.svg";
 import McpToolIcon from "../icons/tool.svg";
 import HeadphoneIcon from "../icons/headphone.svg";
+import PaperclipIcon from "../icons/paperclip.svg";
 import {
   BOT_HELLO,
   ChatMessage,
@@ -1036,6 +1037,10 @@ function _Chat() {
   const navigate = useNavigate();
   const [attachImages, setAttachImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [attachFiles, setAttachFiles] = useState<
+    { name: string; path: string }[]
+  >([]);
+  const [uploadingFile, setUploadingFile] = useState(false);
 
   // prompt hints
   const promptStore = usePromptStore();
@@ -1106,7 +1111,12 @@ function _Chat() {
   };
 
   const doSubmit = (userInput: string) => {
-    if (userInput.trim() === "" && isEmpty(attachImages)) return;
+    if (
+      userInput.trim() === "" &&
+      isEmpty(attachImages) &&
+      attachFiles.length === 0
+    )
+      return;
     const matchCommand = chatCommands.match(userInput);
     if (matchCommand.matched) {
       setUserInput("");
@@ -1114,11 +1124,20 @@ function _Chat() {
       matchCommand.invoke();
       return;
     }
+    // Append file attachment paths to the message
+    let finalInput = userInput;
+    if (attachFiles.length > 0) {
+      const fileTags = attachFiles
+        .map((f) => `[Attachment: ${f.path}]`)
+        .join("\n");
+      finalInput = finalInput.trim() ? `${finalInput}\n${fileTags}` : fileTags;
+    }
     setIsLoading(true);
     chatStore
-      .onUserInput(userInput, attachImages)
+      .onUserInput(finalInput, attachImages)
       .then(() => setIsLoading(false));
     setAttachImages([]);
+    setAttachFiles([]);
     chatStore.setLastInput(userInput);
     setUserInput("");
     setPromptHints([]);
@@ -1619,6 +1638,118 @@ function _Chat() {
     setAttachImages(images);
   }
 
+  const ALLOWED_FILE_EXTENSIONS = [
+    ".pdf",
+    ".doc",
+    ".docx",
+    ".txt",
+    ".md",
+    ".json",
+    ".csv",
+    ".xlsx",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".zip",
+  ];
+
+  const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+
+  async function uploadFileToServer(file: File) {
+    const ext = "." + file.name.split(".").pop()?.toLowerCase();
+    if (!ALLOWED_FILE_EXTENSIONS.includes(ext)) {
+      alert(
+        `File type "${ext}" is not allowed. Supported: ${ALLOWED_FILE_EXTENSIONS.join(
+          ", ",
+        )}`,
+      );
+      return;
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      alert("File size exceeds 50MB limit");
+      return;
+    }
+
+    setUploadingFile(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAttachFiles((prev) => [
+          ...prev,
+          { name: data.fileName, path: data.filePath },
+        ]);
+      } else {
+        alert(data.error || "Upload failed");
+      }
+    } catch (e) {
+      alert("Upload failed: " + (e as Error).message);
+    } finally {
+      setUploadingFile(false);
+    }
+  }
+
+  function handleAttachFile() {
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = ALLOWED_FILE_EXTENSIONS.join(",");
+    fileInput.multiple = true;
+    fileInput.onchange = (event: any) => {
+      const files = event.target.files;
+      for (let i = 0; i < files.length; i++) {
+        uploadFileToServer(files[i]);
+      }
+    };
+    fileInput.click();
+  }
+
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
+  const dragCounter = useRef(0);
+
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current++;
+    if (e.dataTransfer.types.includes("Files")) {
+      setIsDraggingFile(true);
+    }
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current--;
+    if (dragCounter.current === 0) {
+      setIsDraggingFile(false);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDraggingFile(false);
+      dragCounter.current = 0;
+      const files = e.dataTransfer.files;
+      for (let i = 0; i < files.length; i++) {
+        uploadFileToServer(files[i]);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
   // 快捷键 shortcut keys
   const [showShortcutKeyModal, setShowShortcutKeyModal] = useState(false);
 
@@ -2105,10 +2236,18 @@ function _Chat() {
               <label
                 className={clsx(styles["chat-input-panel-inner"], {
                   [styles["chat-input-panel-inner-attach"]]:
-                    attachImages.length !== 0,
+                    attachImages.length !== 0 || attachFiles.length !== 0,
+                  [styles["chat-input-panel-inner-dragover"]]: isDraggingFile,
                 })}
                 htmlFor="chat-input"
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
               >
+                {isDraggingFile && (
+                  <div className={styles["drop-overlay"]}>Drop files here</div>
+                )}
                 <textarea
                   id="chat-input"
                   ref={inputRef}
@@ -2150,6 +2289,39 @@ function _Chat() {
                     })}
                   </div>
                 )}
+                {attachFiles.length > 0 && (
+                  <div className={styles["attach-files"]}>
+                    {attachFiles.map((file, index) => (
+                      <div key={index} className={styles["attach-file"]}>
+                        <span className={styles["attach-file-name"]}>
+                          {file.name}
+                        </span>
+                        <button
+                          className={styles["attach-file-remove"]}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setAttachFiles((prev) =>
+                              prev.filter((_, i) => i !== index),
+                            );
+                          }}
+                        >
+                          <CloseIcon />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <button
+                  className={styles["chat-input-attach"]}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleAttachFile();
+                  }}
+                  title="Attach file"
+                  type="button"
+                >
+                  {uploadingFile ? <LoadingButtonIcon /> : <PaperclipIcon />}
+                </button>
                 <VoiceInputButton
                   onTranscript={(text) => {
                     setUserInput((prev) => prev + text);
