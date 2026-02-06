@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { list, del } from "@vercel/blob";
 
 const RETENTION_DAYS = 7;
 
@@ -10,6 +9,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const token = process.env.BLOB_READ_WRITE_TOKEN;
+  if (!token) {
+    return NextResponse.json(
+      { error: "BLOB_READ_WRITE_TOKEN not set" },
+      { status: 500 },
+    );
+  }
+
   try {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - RETENTION_DAYS);
@@ -17,21 +24,40 @@ export async function GET(req: NextRequest) {
     let deleted = 0;
     let cursor: string | undefined;
 
-    // Paginate through all blobs
+    // Paginate through all blobs using REST API
     do {
-      const { blobs, cursor: nextCursor } = await list({
-        prefix: "uploads/",
-        cursor,
+      const listUrl = new URL("https://blob.vercel-storage.com");
+      listUrl.searchParams.set("prefix", "uploads/");
+      if (cursor) listUrl.searchParams.set("cursor", cursor);
+
+      const listRes = await fetch(listUrl.toString(), {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      for (const blob of blobs) {
-        if (blob.uploadedAt < cutoffDate) {
-          await del(blob.url);
-          deleted++;
-        }
+      if (!listRes.ok) {
+        throw new Error(`List failed: ${listRes.status}`);
       }
 
-      cursor = nextCursor;
+      const data = await listRes.json();
+      const blobs = data.blobs || [];
+      cursor = data.cursor;
+
+      for (const blob of blobs) {
+        const uploadedAt = new Date(blob.uploadedAt);
+        if (uploadedAt < cutoffDate) {
+          // Delete using REST API
+          const delRes = await fetch(
+            `https://blob.vercel-storage.com?url=${encodeURIComponent(
+              blob.url,
+            )}`,
+            {
+              method: "DELETE",
+              headers: { Authorization: `Bearer ${token}` },
+            },
+          );
+          if (delRes.ok) deleted++;
+        }
+      }
     } while (cursor);
 
     return NextResponse.json({
@@ -48,4 +74,4 @@ export async function GET(req: NextRequest) {
   }
 }
 
-export const runtime = "nodejs"; // Need Node.js for list/del
+export const runtime = "edge";
