@@ -496,14 +496,14 @@ function useScrollToBottom(
 }
 
 export function ChatActions(props: {
-  uploadImage: () => void;
+  uploadFile: () => void;
   setAttachImages: (images: string[]) => void;
   setUploading: (uploading: boolean) => void;
   showPromptModal: () => void;
   scrollToBottom: () => void;
   showPromptHints: () => void;
   hitBottom: boolean;
-  uploading: boolean;
+  uploadingFile: boolean;
   setShowShortcutKeyModal: React.Dispatch<React.SetStateAction<boolean>>;
   setUserInput: (input: string) => void;
   setShowChatSidePanel: React.Dispatch<React.SetStateAction<boolean>>;
@@ -625,13 +625,11 @@ export function ChatActions(props: {
           />
         )}
 
-        {showUploadImage && (
-          <ChatAction
-            onClick={props.uploadImage}
-            text={Locale.Chat.InputActions.UploadImage}
-            icon={props.uploading ? <LoadingButtonIcon /> : <ImageIcon />}
-          />
-        )}
+        <ChatAction
+          onClick={props.uploadFile}
+          text="Upload"
+          icon={props.uploadingFile ? <LoadingButtonIcon /> : <PaperclipIcon />}
+        />
         <ChatAction
           onClick={nextTheme}
           text={Locale.Chat.InputActions.Theme[theme]}
@@ -2211,13 +2209,13 @@ function _Chat() {
               />
 
               <ChatActions
-                uploadImage={uploadImage}
+                uploadFile={handleAttachFile}
                 setAttachImages={setAttachImages}
                 setUploading={setUploading}
                 showPromptModal={() => setShowPromptModal(true)}
                 scrollToBottom={scrollToBottom}
                 hitBottom={hitBottom}
-                uploading={uploading}
+                uploadingFile={uploadingFile}
                 showPromptHints={() => {
                   // Click again to close
                   if (promptHints.length > 0) {
@@ -2311,17 +2309,6 @@ function _Chat() {
                     ))}
                   </div>
                 )}
-                <button
-                  className={styles["chat-input-attach"]}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleAttachFile();
-                  }}
-                  title="Attach file"
-                  type="button"
-                >
-                  {uploadingFile ? <LoadingButtonIcon /> : <PaperclipIcon />}
-                </button>
                 <VoiceInputButton
                   onTranscript={(text) => {
                     setUserInput((prev) => prev + text);
