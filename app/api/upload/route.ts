@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
-import os from "os";
-
-const UPLOAD_DIR = path.join(os.homedir(), "clawd", "uploads");
+import { put } from "@vercel/blob";
 
 const ALLOWED_EXTENSIONS = new Set([
   ".pdf",
@@ -21,7 +17,7 @@ const ALLOWED_EXTENSIONS = new Set([
   ".zip",
 ]);
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export async function POST(req: NextRequest) {
   try {
@@ -35,13 +31,13 @@ export async function POST(req: NextRequest) {
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
-        { error: "File size exceeds 50MB limit" },
+        { error: "File size exceeds 10MB limit" },
         { status: 400 },
       );
     }
 
     // Validate file extension
-    const ext = path.extname(file.name).toLowerCase();
+    const ext = "." + (file.name.split(".").pop()?.toLowerCase() || "unknown");
     if (!ALLOWED_EXTENSIONS.has(ext)) {
       return NextResponse.json(
         {
@@ -53,33 +49,29 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Ensure upload directory exists
-    await mkdir(UPLOAD_DIR, { recursive: true });
-
     // Generate timestamped filename
     const timestamp = Date.now();
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const fileName = `${timestamp}_${safeName}`;
-    const filePath = path.join(UPLOAD_DIR, fileName);
+    const fileName = `uploads/${timestamp}_${safeName}`;
 
-    // Write file
-    const bytes = await file.arrayBuffer();
-    await writeFile(filePath, Buffer.from(bytes));
+    // Upload to Vercel Blob
+    const blob = await put(fileName, file, {
+      access: "public",
+    });
 
     return NextResponse.json({
       success: true,
       fileName: file.name,
-      filePath,
+      filePath: blob.url,
       size: file.size,
     });
   } catch (error) {
     console.error("Upload error:", error);
     return NextResponse.json(
-      { error: "Failed to upload file" },
+      { error: "Failed to upload file: " + (error as Error).message },
       { status: 500 },
     );
   }
 }
 
-export const runtime = "nodejs";
-export const maxDuration = 60;
+export const runtime = "edge";
