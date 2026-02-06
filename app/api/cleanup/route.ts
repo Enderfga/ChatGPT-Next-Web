@@ -27,7 +27,9 @@ export async function GET(req: NextRequest) {
     cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
 
     let deleted = 0;
+    let checked = 0;
     let cursor: string | undefined;
+    let debugBlobs: any[] = [];
 
     // Paginate through all blobs using REST API
     do {
@@ -48,7 +50,13 @@ export async function GET(req: NextRequest) {
       cursor = data.cursor;
 
       for (const blob of blobs) {
+        checked++;
         const uploadedAt = new Date(blob.uploadedAt);
+        debugBlobs.push({
+          url: blob.url?.slice(-30),
+          uploadedAt: blob.uploadedAt,
+          shouldDelete: uploadedAt < cutoffDate,
+        });
         if (uploadedAt < cutoffDate) {
           // Delete using REST API
           const delRes = await fetch(
@@ -68,7 +76,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       success: true,
       deleted,
+      checked,
       cutoffDate: cutoffDate.toISOString(),
+      retentionDays,
+      blobs: debugBlobs.slice(0, 5), // show first 5 for debug
     });
   } catch (error) {
     console.error("Cleanup error:", error);
