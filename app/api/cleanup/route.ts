@@ -58,16 +58,15 @@ export async function GET(req: NextRequest) {
           shouldDelete: uploadedAt < cutoffDate,
         });
         if (uploadedAt < cutoffDate) {
-          // Delete using REST API
-          const delRes = await fetch(
-            `https://blob.vercel-storage.com?url=${encodeURIComponent(
-              blob.url,
-            )}`,
-            {
-              method: "DELETE",
-              headers: { Authorization: `Bearer ${token}` },
+          // Delete using REST API (Vercel Blob format)
+          const delRes = await fetch("https://blob.vercel-storage.com/delete", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
             },
-          );
+            body: JSON.stringify({ urls: [blob.url] }),
+          });
           if (delRes.ok) deleted++;
         }
       }
