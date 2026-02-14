@@ -435,13 +435,15 @@ export const useChatStore = createPersistStore(
           // Update existing placeholder message
           console.log("[Push] Updating placeholder message");
           get().updateTargetSession(targetSession, (session) => {
-            const messages = session.messages;
-            messages[messages.length - 1] = {
-              ...messages[messages.length - 1],
+            // Create new messages array to trigger React update
+            const newMessages = [...session.messages];
+            newMessages[newMessages.length - 1] = {
+              ...newMessages[newMessages.length - 1],
               content,
               streaming: false,
               date: new Date().toLocaleString(),
             };
+            session.messages = newMessages;
             session.lastUpdate = Date.now();
           });
         } else {
@@ -1033,8 +1035,12 @@ IMPORTANT:
         const sessions = get().sessions;
         const index = sessions.findIndex((s) => s.id === targetSession.id);
         if (index < 0) return;
-        updater(sessions[index]);
-        set(() => ({ sessions }));
+        // Create new session object to ensure React detects the change
+        const newSession = { ...sessions[index] };
+        updater(newSession);
+        const newSessions = [...sessions];
+        newSessions[index] = newSession;
+        set(() => ({ sessions: newSessions }));
       },
       async clearAllData() {
         await indexedDBStorage.clear();
