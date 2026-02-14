@@ -145,46 +145,51 @@ export function Nexus() {
   // Listen for push messages (fallback when streaming times out)
   usePush({
     sessionId: nexusSessionId,
-    onMessage: useCallback((message) => {
-      console.log("[Nexus Push] Received fallback message:", message);
-      const content =
-        typeof message.content === "string"
-          ? message.content
-          : message.content
-              ?.filter(
-                (c): c is { type: "text"; text: string } => c.type === "text",
-              )
-              .map((c) => c.text)
-              .join("\n") || "";
+    onMessage: useCallback(
+      (message: {
+        content: string | Array<{ type: string; text?: string }>;
+      }) => {
+        console.log("[Nexus Push] Received fallback message:", message);
+        const content =
+          typeof message.content === "string"
+            ? message.content
+            : message.content
+                ?.filter(
+                  (c): c is { type: "text"; text: string } => c.type === "text",
+                )
+                .map((c) => c.text)
+                .join("\n") || "";
 
-      if (content) {
-        setChatMessages((prev) => {
-          // Check if last message is a placeholder or loading state
-          const lastMsg = prev[prev.length - 1];
-          if (
-            lastMsg?.role === "assistant" &&
-            (lastMsg.content === "▌" ||
-              lastMsg.content.endsWith("▌") ||
-              lastMsg.content.includes("处理中"))
-          ) {
-            // Replace placeholder with actual content
-            const updated = [...prev];
-            updated[updated.length - 1] = {
-              role: "assistant",
-              content,
-              timestamp: Date.now(),
-            };
-            return updated;
-          }
-          // Otherwise append as new message
-          return [
-            ...prev,
-            { role: "assistant", content, timestamp: Date.now() },
-          ];
-        });
-        setChatLoading(false);
-      }
-    }, []),
+        if (content) {
+          setChatMessages((prev) => {
+            // Check if last message is a placeholder or loading state
+            const lastMsg = prev[prev.length - 1];
+            if (
+              lastMsg?.role === "assistant" &&
+              (lastMsg.content === "▌" ||
+                lastMsg.content.endsWith("▌") ||
+                lastMsg.content.includes("处理中"))
+            ) {
+              // Replace placeholder with actual content
+              const updated = [...prev];
+              updated[updated.length - 1] = {
+                role: "assistant",
+                content,
+                timestamp: Date.now(),
+              };
+              return updated;
+            }
+            // Otherwise append as new message
+            return [
+              ...prev,
+              { role: "assistant", content, timestamp: Date.now() },
+            ];
+          });
+          setChatLoading(false);
+        }
+      },
+      [],
+    ),
   });
 
   // Agent status state
