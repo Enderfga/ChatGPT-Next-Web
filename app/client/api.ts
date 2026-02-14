@@ -254,9 +254,11 @@ export function getHeaders(ignoreHeaders: boolean = false) {
 
   // Add webchat session ID for push capability
   // Use x-openclaw-session-key for consistent session tracking across channels
+  // Use X-Push-Session for push fallback when streaming connection is lost
   const sessionId = chatStore.currentSession()?.id;
   if (sessionId) {
     headers["x-openclaw-session-key"] = `webchat:${sessionId}`;
+    headers["X-Push-Session"] = sessionId; // For push fallback
   }
 
   const clientConfig = getClientConfig();

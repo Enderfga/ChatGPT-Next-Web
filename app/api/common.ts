@@ -108,6 +108,7 @@ export async function requestOpenai(req: NextRequest) {
 
   // Get session key from request headers for consistent session tracking
   const webchatSessionId = req.headers.get("x-openclaw-session-key");
+  const pushSessionId = req.headers.get("X-Push-Session");
 
   const fetchOptions: RequestInit = {
     headers: {
@@ -127,6 +128,10 @@ export async function requestOpenai(req: NextRequest) {
       // Forward session key for consistent session tracking
       ...(webchatSessionId && {
         "x-openclaw-session-key": webchatSessionId,
+      }),
+      // Forward push session ID for push fallback when streaming times out
+      ...(pushSessionId && {
+        "X-Push-Session": pushSessionId,
       }),
     },
     method: req.method,
