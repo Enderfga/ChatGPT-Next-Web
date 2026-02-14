@@ -222,8 +222,16 @@ export function Nexus() {
       : "wss://api.enderfga.cn/sasha-doctor/terminal";
   }, []);
 
-  // Use nexus-chat API which connects to openclaw gateway (not OpenAI!)
-  const chatApiUrl = "/api/nexus-chat";
+  // Use chat-push API for async chat (avoids Vercel 10s timeout)
+  // Local: direct to sasha-doctor, Remote: via Cloudflare tunnel
+  const chatPushUrl = useMemo(() => {
+    if (typeof window === "undefined") return "";
+    const host = window.location.host;
+    const isLocal = host.includes("localhost") || host.includes("127.0.0.1");
+    return isLocal
+      ? "http://localhost:18795/sasha-doctor/chat-push"
+      : "https://api.enderfga.cn/sasha-doctor/chat-push";
+  }, []);
 
   // ============ LOAD SSH HOSTS ============
 
@@ -504,29 +512,29 @@ export function Nexus() {
     setChatInput("");
     setChatLoading(true);
 
-    let assistantContent = "";
-
-    // Add placeholder message for streaming
+    // Add placeholder message - will be updated by push
     setChatMessages((prev) => [
       ...prev,
-      { role: "assistant", content: "▌", timestamp: Date.now() },
+      { role: "assistant", content: "处理中... ⏳", timestamp: Date.now() },
     ]);
 
     try {
-      console.log("[Nexus] Calling:", chatApiUrl);
+      console.log("[Nexus] Calling chat-push:", chatPushUrl);
+      console.log("[Nexus] Session ID:", nexusSessionId);
 
-      const res = await fetch(chatApiUrl, {
+      // Use chat-push API - async mode, result comes via Push API
+      const res = await fetch(chatPushUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model:
-            gatewayModel !== "-" ? gatewayModel : "anthropic/claude-opus-4-5",
+            gatewayModel !== "-" ? gatewayModel : "anthropic/claude-sonnet-4",
           messages: [...chatMessages, userMsg].map((m) => ({
             role: m.role,
             content: m.content,
           })),
           max_tokens: 4096,
-          sessionId: nexusSessionId, // For push fallback when streaming times out
+          sessionId: nexusSessionId, // Result will be pushed to this session
         }),
       });
 
@@ -535,60 +543,13 @@ export function Nexus() {
         throw new Error(`${res.status}: ${errText.slice(0, 200)}`);
       }
 
-      const reader = res.body?.getReader();
-      if (!reader) throw new Error("No response body");
+      const data = await res.json();
+      console.log("[Nexus] Request accepted:", data);
 
-      const decoder = new TextDecoder();
-      let buffer = ""; // Buffer for incomplete lines
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-
-        // Process complete lines
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || ""; // Keep incomplete line in buffer
-
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            const data = line.slice(6).trim();
-            if (data === "[DONE]") continue;
-            if (!data) continue;
-            try {
-              const parsed = JSON.parse(data);
-              const delta = parsed.choices?.[0]?.delta?.content || "";
-              if (delta) {
-                assistantContent += delta;
-                setChatMessages((prev) => {
-                  const updated = [...prev];
-                  updated[updated.length - 1] = {
-                    role: "assistant",
-                    content: assistantContent + "▌",
-                    timestamp: Date.now(),
-                  };
-                  return updated;
-                });
-              }
-            } catch {
-              // Skip invalid JSON
-            }
-          }
-        }
-      }
-
-      // Final update without cursor
-      setChatMessages((prev) => {
-        const updated = [...prev];
-        updated[updated.length - 1] = {
-          role: "assistant",
-          content: assistantContent || "No response",
-          timestamp: Date.now(),
-        };
-        return updated;
-      });
+      // Response will come via Push API (usePush hook handles it)
+      // Keep loading state until push message arrives
     } catch (err: any) {
+      console.error("[Nexus] Chat error:", err);
       // Update the placeholder message with error
       setChatMessages((prev) => {
         const updated = [...prev];
@@ -599,9 +560,9 @@ export function Nexus() {
         };
         return updated;
       });
-    } finally {
-      setChatLoading(false);
+      setChatLoading(false); // Only clear loading on error
     }
+    // Note: Don't clear loading on success - usePush will clear it when message arrives
   };
 
   useEffect(() => {
