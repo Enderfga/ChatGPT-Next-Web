@@ -421,42 +421,16 @@ export const useChatStore = createPersistStore(
           return false;
         }
 
-        // Check if last message is a "processing" placeholder
-        const lastMsg =
-          targetSession.messages[targetSession.messages.length - 1];
-        const isPlaceholder =
-          lastMsg?.role === "assistant" &&
-          typeof lastMsg.content === "string" &&
-          (lastMsg.content.includes("处理中") ||
-            lastMsg.content.includes("⏳") ||
-            lastMsg.content === "▌");
+        // Simply add the push message (don't try to update placeholder - causes React issues)
+        const pushMessage: ChatMessage = createMessage({
+          role: options?.role || "assistant",
+          content,
+        });
 
-        if (isPlaceholder) {
-          // Update existing placeholder message
-          console.log("[Push] Updating placeholder message");
-          get().updateTargetSession(targetSession, (session) => {
-            // Create new messages array to trigger React update
-            const newMessages = [...session.messages];
-            newMessages[newMessages.length - 1] = {
-              ...newMessages[newMessages.length - 1],
-              content,
-              streaming: false,
-              date: new Date().toLocaleString(),
-            };
-            session.messages = newMessages;
-            session.lastUpdate = Date.now();
-          });
-        } else {
-          // Add new message
-          const pushMessage: ChatMessage = createMessage({
-            role: options?.role || "assistant",
-            content,
-          });
-          get().updateTargetSession(targetSession, (session) => {
-            session.messages = session.messages.concat(pushMessage);
-            session.lastUpdate = Date.now();
-          });
-        }
+        get().updateTargetSession(targetSession, (session) => {
+          session.messages = session.messages.concat(pushMessage);
+          session.lastUpdate = Date.now();
+        });
 
         get().summarizeSession(false, targetSession);
         return true;
