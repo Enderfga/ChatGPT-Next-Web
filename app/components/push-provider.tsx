@@ -46,7 +46,11 @@ export function PushProvider({
 
   const handleError = useCallback((message: PushMessage) => {
     console.error("[PushProvider] Received error:", message);
-    showToast(`Error: ${message.content}`);
+    const errorText =
+      typeof message.content === "string"
+        ? message.content
+        : getTextPreview(message.content, 100);
+    showToast(`Error: ${errorText}`);
   }, []);
 
   const handleConnect = useCallback((clientId: string) => {

@@ -421,19 +421,42 @@ export const useChatStore = createPersistStore(
           return false;
         }
 
-        const pushMessage: ChatMessage = createMessage({
-          role: options?.role || "assistant",
-          content,
-        });
+        // Check if last message is a "processing" placeholder
+        const lastMsg =
+          targetSession.messages[targetSession.messages.length - 1];
+        const isPlaceholder =
+          lastMsg?.role === "assistant" &&
+          typeof lastMsg.content === "string" &&
+          (lastMsg.content.includes("处理中") ||
+            lastMsg.content.includes("⏳") ||
+            lastMsg.content === "▌");
 
-        get().updateTargetSession(targetSession, (session) => {
-          session.messages = session.messages.concat(pushMessage);
-          session.lastUpdate = Date.now();
-        });
+        if (isPlaceholder) {
+          // Update existing placeholder message
+          console.log("[Push] Updating placeholder message");
+          get().updateTargetSession(targetSession, (session) => {
+            const messages = session.messages;
+            messages[messages.length - 1] = {
+              ...messages[messages.length - 1],
+              content,
+              streaming: false,
+              date: new Date().toLocaleString(),
+            };
+            session.lastUpdate = Date.now();
+          });
+        } else {
+          // Add new message
+          const pushMessage: ChatMessage = createMessage({
+            role: options?.role || "assistant",
+            content,
+          });
+          get().updateTargetSession(targetSession, (session) => {
+            session.messages = session.messages.concat(pushMessage);
+            session.lastUpdate = Date.now();
+          });
+        }
 
-        get().updateStat(pushMessage, targetSession);
         get().summarizeSession(false, targetSession);
-
         return true;
       },
 
@@ -450,6 +473,16 @@ export const useChatStore = createPersistStore(
       ) {
         const session = get().currentSession();
         const modelConfig = session.mask.modelConfig;
+        const config = useAppConfig.getState();
+
+        // Push Mode: use chat-push API to avoid Vercel timeout
+        if (config.enablePushMode) {
+          return get().onUserInputPushMode(
+            content,
+            attachImages,
+            isMcpResponse,
+          );
+        }
 
         // MCP Response no need to fill template
         let mContent: string | MultimodalContent[] = isMcpResponse
@@ -591,6 +624,104 @@ export const useChatStore = createPersistStore(
             );
           },
         });
+      },
+
+      // Push Mode: send chat via push API (avoids Vercel timeout)
+      async onUserInputPushMode(
+        content: string,
+        attachImages?: string[],
+        isMcpResponse?: boolean,
+      ) {
+        const session = get().currentSession();
+        const modelConfig = session.mask.modelConfig;
+
+        // Prepare content (same as normal mode)
+        let mContent: string | MultimodalContent[] = isMcpResponse
+          ? content
+          : fillTemplateWith(content, modelConfig);
+
+        if (!isMcpResponse && attachImages && attachImages.length > 0) {
+          mContent = [
+            ...(content ? [{ type: "text" as const, text: content }] : []),
+            ...attachImages.map((url) => ({
+              type: "image_url" as const,
+              image_url: { url },
+            })),
+          ];
+        }
+
+        const userMessage: ChatMessage = createMessage({
+          role: "user",
+          content: mContent,
+          isMcpResponse,
+        });
+
+        const botMessage: ChatMessage = createMessage({
+          role: "assistant",
+          streaming: false, // No streaming in push mode
+          content: "⏳ 处理中...",
+          model: modelConfig.model,
+        });
+
+        // Save messages
+        get().updateTargetSession(session, (session) => {
+          session.messages = session.messages.concat([userMessage, botMessage]);
+        });
+
+        // Get recent messages for context
+        const recentMessages = await get().getMessagesWithMemory();
+        const sendMessages = recentMessages.concat(userMessage);
+
+        // Determine push API URL
+        const isLocal =
+          typeof window !== "undefined" &&
+          (window.location.host.includes("localhost") ||
+            window.location.host.includes("127.0.0.1"));
+        const chatPushUrl = isLocal
+          ? "http://localhost:18795/sasha-doctor/chat-push"
+          : "/api/chat-push";
+
+        try {
+          console.log("[PushMode] Sending to:", chatPushUrl);
+          console.log("[PushMode] Session:", session.id);
+
+          const response = await fetch(chatPushUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model: modelConfig.model,
+              messages: sendMessages.map((m) => ({
+                role: m.role,
+                content: typeof m.content === "string" ? m.content : m.content,
+              })),
+              max_tokens: modelConfig.max_tokens,
+              sessionId: session.id,
+            }),
+          });
+
+          if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(`${response.status}: ${errText.slice(0, 200)}`);
+          }
+
+          const data = await response.json();
+          console.log("[PushMode] Request accepted:", data);
+
+          // Update bot message to show waiting
+          botMessage.content = "⏳ 处理中，结果将通过推送发送...";
+          get().updateTargetSession(session, (session) => {
+            session.messages = session.messages.concat();
+          });
+
+          // Result will come via PushProvider -> receivePushMessage
+        } catch (error: any) {
+          console.error("[PushMode] Error:", error);
+          botMessage.content = `❌ 发送失败: ${error.message}`;
+          botMessage.isError = true;
+          get().updateTargetSession(session, (session) => {
+            session.messages = session.messages.concat();
+          });
+        }
       },
 
       getMemoryPrompt() {

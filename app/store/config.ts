@@ -53,6 +53,8 @@ export const DEFAULT_CONFIG = {
 
   enableArtifacts: true, // show artifacts config
 
+  enablePushMode: true, // use push API for chat (avoids Vercel timeout)
+
   enableCodeFold: true, // code fold config
 
   disablePromptHint: false,
