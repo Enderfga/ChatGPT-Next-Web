@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import styles from "./nexus.module.scss";
 import { Path } from "../../constant";
 import { useAccessStore } from "../../store";
+import { usePush } from "../../hooks/use-push";
 import "xterm/css/xterm.css";
 
 import OpenClawLogo from "../../icons/openclaw.svg";
@@ -128,6 +129,63 @@ export function Nexus() {
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // Session ID for push fallback (persistent across page reloads)
+  const [nexusSessionId] = useState(() => {
+    if (typeof window === "undefined") return "";
+    const stored = localStorage.getItem("nexus-session-id");
+    if (stored) return stored;
+    const newId = `nexus-${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2, 8)}`;
+    localStorage.setItem("nexus-session-id", newId);
+    return newId;
+  });
+
+  // Listen for push messages (fallback when streaming times out)
+  usePush({
+    sessionId: nexusSessionId,
+    onMessage: useCallback((message) => {
+      console.log("[Nexus Push] Received fallback message:", message);
+      const content =
+        typeof message.content === "string"
+          ? message.content
+          : message.content
+              ?.filter(
+                (c): c is { type: "text"; text: string } => c.type === "text",
+              )
+              .map((c) => c.text)
+              .join("\n") || "";
+
+      if (content) {
+        setChatMessages((prev) => {
+          // Check if last message is a placeholder or loading state
+          const lastMsg = prev[prev.length - 1];
+          if (
+            lastMsg?.role === "assistant" &&
+            (lastMsg.content === "▌" ||
+              lastMsg.content.endsWith("▌") ||
+              lastMsg.content.includes("处理中"))
+          ) {
+            // Replace placeholder with actual content
+            const updated = [...prev];
+            updated[updated.length - 1] = {
+              role: "assistant",
+              content,
+              timestamp: Date.now(),
+            };
+            return updated;
+          }
+          // Otherwise append as new message
+          return [
+            ...prev,
+            { role: "assistant", content, timestamp: Date.now() },
+          ];
+        });
+        setChatLoading(false);
+      }
+    }, []),
+  });
 
   // Agent status state
   const [agentStatus, setAgentStatus] = useState<{
@@ -463,6 +521,7 @@ export function Nexus() {
             content: m.content,
           })),
           max_tokens: 4096,
+          sessionId: nexusSessionId, // For push fallback when streaming times out
         }),
       });
 

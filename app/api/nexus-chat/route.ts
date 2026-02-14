@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // Nexus chat API - connects to openclaw gateway with STREAMING
+// Supports push fallback: if streaming connection is lost (e.g., Vercel timeout),
+// gateway will send response via Push API using the X-Push-Session header
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -33,6 +35,17 @@ export async function POST(req: NextRequest) {
         headers["CF-Access-Client-Id"] = cfId;
         headers["CF-Access-Client-Secret"] = cfSecret;
       }
+    }
+
+    // Pass webchat session ID for push fallback
+    // When streaming connection is lost, gateway can send response via Push API
+    const pushSessionId = body.sessionId || req.headers.get("x-push-session");
+    if (pushSessionId) {
+      headers["X-Push-Session"] = pushSessionId;
+      console.log(
+        "[Nexus Chat] Push fallback enabled for session:",
+        pushSessionId,
+      );
     }
 
     console.log("[Nexus Chat] isLocal:", isLocal);
