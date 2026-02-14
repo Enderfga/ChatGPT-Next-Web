@@ -18,9 +18,23 @@ export async function POST(req: NextRequest) {
     console.log("[ChatPush] Session:", body.sessionId?.slice(0, 8));
     console.log("[ChatPush] Model:", body.model);
 
+    // Build headers with CF Access credentials for remote calls
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    if (!isLocal) {
+      const cfId = process.env.CF_ACCESS_CLIENT_ID;
+      const cfSecret = process.env.CF_ACCESS_CLIENT_SECRET;
+      if (cfId && cfSecret) {
+        headers["CF-Access-Client-Id"] = cfId;
+        headers["CF-Access-Client-Secret"] = cfSecret;
+      }
+    }
+
     const res = await fetch(chatPushUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(body),
     });
 
