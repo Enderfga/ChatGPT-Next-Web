@@ -432,16 +432,24 @@ export const useChatStore = createPersistStore(
             lastMsg.content === "▌");
 
         if (isPlaceholder) {
-          // Update existing placeholder message
-          console.log("[Push] Updating placeholder message");
+          // Update existing placeholder message - create new array for React to detect change
+          console.log(
+            "[Push] Updating placeholder message for session:",
+            sessionId,
+          );
           get().updateTargetSession(targetSession, (session) => {
-            const messages = session.messages;
-            messages[messages.length - 1] = {
-              ...messages[messages.length - 1],
+            const lastIndex = session.messages.length - 1;
+            const updatedMessage = {
+              ...session.messages[lastIndex],
               content,
               streaming: false,
               date: new Date().toLocaleString(),
             };
+            // Create completely new array to ensure React re-renders
+            session.messages = [
+              ...session.messages.slice(0, lastIndex),
+              updatedMessage,
+            ];
             session.lastUpdate = Date.now();
           });
         } else {
