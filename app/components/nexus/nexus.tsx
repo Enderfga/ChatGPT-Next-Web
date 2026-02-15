@@ -107,7 +107,7 @@ export function Nexus() {
     if (model.includes("gemini")) return "Gemini";
     if (model.includes("gpt-5")) return "GPT-5.2";
     if (model.includes("gpt-4o")) return "GPT-4o";
-    if (model.includes("opus")) return "Opus 4.5";
+    if (model.includes("opus")) return "Opus 4.6";
     return model;
   };
   const [intel, setIntel] = useLocalStorageState<IntelState>("nexus-intel", {
