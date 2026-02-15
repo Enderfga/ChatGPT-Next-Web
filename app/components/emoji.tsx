@@ -22,10 +22,18 @@ import BotIconDoubao from "../icons/llm-icons/doubao.svg";
 import BotIconChatglm from "../icons/llm-icons/chatglm.svg";
 import BotIconOpenClaw from "../icons/openclaw.svg";
 
+// Local overrides for flipped/custom emoji images (place PNGs in /public/)
+const LOCAL_EMOJI_OVERRIDES: Record<string, string> = {
+  "1f603": "/user-avatar.png",
+};
+
 export function getEmojiUrl(
   unified: string,
   style: EmojiStyle = DEFAULT_EMOJI_STYLE,
 ) {
+  if (LOCAL_EMOJI_OVERRIDES[unified]) {
+    return LOCAL_EMOJI_OVERRIDES[unified];
+  }
   // Whoever owns this Content Delivery Network (CDN), I am using your CDN to serve emojis
   // Old CDN broken, so I had to switch to this one
   // Author: https://github.com/H0llyW00dzZ
