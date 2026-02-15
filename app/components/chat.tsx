@@ -2027,23 +2027,7 @@ function _Chat() {
                                 ></IconButton>
                               </div>
                               {isUser ? (
-                                currentProviderName?.toLowerCase() ===
-                                "openclaw" ? (
-                                  <div
-                                    className="no-dark"
-                                    style={{
-                                      display: "flex",
-                                      alignItems: "center",
-                                      justifyContent: "center",
-                                      width: 30,
-                                      height: 30,
-                                    }}
-                                  >
-                                    <OpenClawLogo
-                                      style={{ width: 24, height: 24 }}
-                                    />
-                                  </div>
-                                ) : isOpenclawSelected ? (
+                                isOpenclawSelected ? (
                                   <div
                                     style={{
                                       display: "flex",
@@ -2053,8 +2037,14 @@ function _Chat() {
                                       height: 30,
                                     }}
                                   >
-                                    <NexusIcon
-                                      style={{ width: 24, height: 24 }}
+                                    <img
+                                      src="/favicon-32x32.png"
+                                      alt="user"
+                                      style={{
+                                        width: 24,
+                                        height: 24,
+                                        borderRadius: "50%",
+                                      }}
                                     />
                                   </div>
                                 ) : (
