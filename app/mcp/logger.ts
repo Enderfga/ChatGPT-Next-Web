@@ -13,10 +13,7 @@ export class MCPClientLogger {
   private readonly prefix: string;
   private readonly debugMode: boolean;
 
-  constructor(
-    prefix: string = "NextChat MCP Client",
-    debugMode: boolean = false,
-  ) {
+  constructor(prefix: string = "MCP Client", debugMode: boolean = false) {
     this.prefix = prefix;
     this.debugMode = debugMode;
   }
