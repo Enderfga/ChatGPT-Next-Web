@@ -328,6 +328,10 @@
   .chat-message-header {
     flex-direction: row-reverse;
   }
+
+  .chat-message-avatar .user-avatar {
+    transform: scaleX(-1);
+  }
 }
 
 .chat-message-header {
