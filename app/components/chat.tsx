@@ -41,6 +41,7 @@ import AutoIcon from "../icons/auto.svg";
 import BottomIcon from "../icons/bottom.svg";
 import StopIcon from "../icons/pause.svg";
 import RobotIcon from "../icons/robot.svg";
+import OpenClawLogo from "../icons/openclaw.svg";
 import SizeIcon from "../icons/size.svg";
 import QualityIcon from "../icons/hd.svg";
 import StyleIcon from "../icons/palette.svg";
@@ -677,19 +678,33 @@ export function ChatActions(props: {
 
         <ChatAction
           onClick={() => setShowModelSelector(true)}
-          text={currentModelName}
-          icon={<RobotIcon />}
+          text={
+            currentProviderName?.toLowerCase() === "openclaw"
+              ? "OpenClaw"
+              : currentModelName
+          }
+          icon={
+            currentProviderName?.toLowerCase() === "openclaw" ? (
+              <OpenClawLogo style={{ width: 16, height: 16 }} />
+            ) : (
+              <RobotIcon />
+            )
+          }
         />
 
         {showModelSelector && (
           <Selector
             defaultSelectedValue={`${currentModel}@${currentProviderName}`}
             items={models.map((m) => ({
-              title: `${m.displayName}${
-                m?.provider?.providerName
-                  ? " (" + m?.provider?.providerName + ")"
-                  : ""
-              }`,
+              title:
+                m?.provider?.providerName?.toLowerCase() === "openclaw"
+                  ? "OpenClaw"
+                  : `${m.displayName}${
+                      m?.provider?.providerName &&
+                      m?.provider?.providerName !== m.displayName
+                        ? " (" + m?.provider?.providerName + ")"
+                        : ""
+                    }`,
               value: `${m.name}@${m?.provider?.providerName}`,
             }))}
             onClose={() => setShowModelSelector(false)}

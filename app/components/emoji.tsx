@@ -20,6 +20,7 @@ import BotIconGrok from "../icons/llm-icons/grok.svg";
 import BotIconHunyuan from "../icons/llm-icons/hunyuan.svg";
 import BotIconDoubao from "../icons/llm-icons/doubao.svg";
 import BotIconChatglm from "../icons/llm-icons/chatglm.svg";
+import BotIconOpenClaw from "../icons/openclaw.svg";
 
 export function getEmojiUrl(
   unified: string,
@@ -41,7 +42,9 @@ export function Avatar(props: { model?: ModelType; avatar?: string }) {
       ? modelName.split("/").pop() || modelName
       : modelName;
 
-    if (
+    if (actualModel.startsWith("openclaw")) {
+      LlmIcon = BotIconOpenClaw;
+    } else if (
       actualModel.startsWith("gpt") ||
       actualModel.startsWith("chatgpt") ||
       actualModel.startsWith("dall-e") ||
