@@ -300,13 +300,13 @@ export function SideBar(props: { className?: string }) {
   const session = chatStore.currentSession();
   const currentModel = session.mask.modelConfig.model;
 
-  // 只有选中了 Openclaw（通常是列表第一个，名称包含 opus-4-5）才显示
-  const isOpenclawSelected = currentModel.toLowerCase().includes("opus-4-5");
+  // 只有选中了 Openclaw（通常是列表第一个，名称包含 opus-4-6）才显示
+  const isOpenclawSelected = currentModel.toLowerCase().includes("opus-4-6");
 
   const MODEL_OPTIONS = [
     { title: "Gemini 3 Pro", value: "gemini-3-pro-preview" },
     { title: "Azure GPT-5.2", value: "azure/gpt-5.2-chat" },
-    { title: "Claude 4.5 Opus", value: "anthropic/claude-opus-4-5" },
+    { title: "Claude 4.6 Opus", value: "anthropic/claude-opus-4-6" },
   ];
 
   const getModelName = (model: string) => {
@@ -314,7 +314,7 @@ export function SideBar(props: { className?: string }) {
     if (model.includes("gemini")) return "Gemini";
     if (model.includes("gpt-5")) return "GPT-5.2 (Azure)";
     if (model.includes("gpt-4o")) return "GPT-4o (Azure)";
-    if (model.includes("opus") || model.includes("claude-4.5"))
+    if (model.includes("opus") || model.includes("claude-4.6"))
       return "Claude 4.5 Opus";
     return "Unknown Model";
   };

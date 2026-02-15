@@ -99,7 +99,7 @@ export function Nexus() {
   const MODEL_OPTIONS = [
     { title: "Gemini 3 Pro", value: "gemini-3-pro-preview" },
     { title: "Azure GPT-5.2", value: "azure/gpt-5.2-chat" },
-    { title: "Claude 4.5 Opus", value: "anthropic/claude-opus-4-5" },
+    { title: "Claude 4.6 Opus", value: "anthropic/claude-opus-4-6" },
   ];
 
   const getModelDisplayName = (model: string) => {
@@ -820,7 +820,7 @@ export function Nexus() {
               {getModelDisplayName(
                 gatewayModel !== "-"
                   ? gatewayModel
-                  : "anthropic/claude-opus-4-5",
+                  : "anthropic/claude-opus-4-6",
               )}{" "}
               ▾
             </span>
