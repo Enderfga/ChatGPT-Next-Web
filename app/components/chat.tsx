@@ -2027,7 +2027,9 @@ function _Chat() {
                                 ></IconButton>
                               </div>
                               {isUser ? (
-                                isOpenclawSelected ? (
+                                session.mask.modelConfig.model
+                                  .toLowerCase()
+                                  .includes("openclaw") ? (
                                   <div
                                     style={{
                                       display: "flex",
