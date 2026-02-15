@@ -2026,7 +2026,25 @@ function _Chat() {
                                 ></IconButton>
                               </div>
                               {isUser ? (
-                                <Avatar avatar={config.avatar} />
+                                currentProviderName?.toLowerCase() ===
+                                "openclaw" ? (
+                                  <div
+                                    className="no-dark"
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      width: 30,
+                                      height: 30,
+                                    }}
+                                  >
+                                    <OpenClawLogo
+                                      style={{ width: 24, height: 24 }}
+                                    />
+                                  </div>
+                                ) : (
+                                  <Avatar avatar={config.avatar} />
+                                )
                               ) : (
                                 <>
                                   {["system"].includes(message.role) ? (
