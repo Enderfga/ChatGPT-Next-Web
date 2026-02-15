@@ -42,6 +42,7 @@ import BottomIcon from "../icons/bottom.svg";
 import StopIcon from "../icons/pause.svg";
 import RobotIcon from "../icons/robot.svg";
 import OpenClawLogo from "../icons/openclaw.svg";
+import NexusIcon from "../icons/nexus.svg";
 import SizeIcon from "../icons/size.svg";
 import QualityIcon from "../icons/hd.svg";
 import StyleIcon from "../icons/palette.svg";
@@ -2039,6 +2040,20 @@ function _Chat() {
                                     }}
                                   >
                                     <OpenClawLogo
+                                      style={{ width: 24, height: 24 }}
+                                    />
+                                  </div>
+                                ) : isOpenclawSelected ? (
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      width: 30,
+                                      height: 30,
+                                    }}
+                                  >
+                                    <NexusIcon
                                       style={{ width: 24, height: 24 }}
                                     />
                                   </div>
