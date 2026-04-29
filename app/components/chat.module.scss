@@ -42,6 +42,46 @@
   }
 }
 
+.attach-files {
+  position: absolute;
+  left: 30px;
+  bottom: 80px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.attach-file-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 5px;
+  background-color: var(--hover-mask);
+  border: rgba($color: #888, $alpha: 0.2) 1px solid;
+  font-size: 12px;
+  color: var(--text-1);
+  cursor: default;
+  max-width: 200px;
+}
+
+.attach-file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attach-file-delete {
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--text-2);
+  flex-shrink: 0;
+  &:hover {
+    color: var(--primary);
+  }
+}
+
 .chat-input-actions {
   display: flex;
   flex-wrap: wrap;
