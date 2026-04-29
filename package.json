@@ -59,7 +59,8 @@
     "zustand": "^4.3.8",
     "xlsx": "^0.18.5",
     "mammoth": "^1.8.0",
-    "pdfjs-dist": "^4.9.155"
+    "pdfjs-dist": "^4.9.155",
+    "jszip": "^3.10.1"
   },
   "devDependencies": {
     "@tauri-apps/api": "^2.1.1",

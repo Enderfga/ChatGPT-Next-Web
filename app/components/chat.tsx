@@ -79,7 +79,12 @@ import {
 } from "../utils";
 
 import { uploadImage as uploadImageRemote } from "@/app/utils/chat";
-import { parseFile, formatFileSize } from "@/app/utils/file-parser";
+import {
+  parseFile,
+  formatFileSize,
+  getAcceptString,
+  isImageFile,
+} from "@/app/utils/file-parser";
 import type { ParsedFile } from "@/app/utils/file-parser";
 
 import dynamic from "next/dynamic";
@@ -1115,7 +1120,12 @@ function _Chat() {
   };
 
   const doSubmit = (userInput: string) => {
-    if (userInput.trim() === "" && isEmpty(attachImages) && isEmpty(attachFiles)) return;
+    if (
+      userInput.trim() === "" &&
+      isEmpty(attachImages) &&
+      isEmpty(attachFiles)
+    )
+      return;
     const matchCommand = chatCommands.match(userInput);
     if (matchCommand.matched) {
       setUserInput("");
@@ -1623,25 +1633,47 @@ function _Chat() {
   async function uploadFile() {
     const fileInput = document.createElement("input");
     fileInput.type = "file";
-    fileInput.accept =
-      ".csv,.tsv,.txt,.xlsx,.xls,.pdf,.docx";
+    fileInput.accept = getAcceptString();
     fileInput.multiple = true;
     fileInput.onchange = async (event: any) => {
-      const files = event.target.files;
-      if (!files || files.length === 0) return;
+      const files: File[] = Array.from(event.target.files || []);
+      if (files.length === 0) return;
       setFileUploading(true);
+
       const newFiles: ParsedFile[] = [...attachFiles];
+      const newImages: string[] = [...attachImages];
+      const errors: string[] = [];
+
       try {
-        for (let i = 0; i < files.length; i++) {
-          const parsed = await parseFile(files[i]);
-          newFiles.push(parsed);
+        for (const file of files) {
+          if (isImageFile(file.name)) {
+            try {
+              const dataUrl = await uploadImageRemote(file);
+              newImages.push(dataUrl);
+            } catch (e: any) {
+              errors.push(`${file.name}: ${e?.message || e}`);
+            }
+          } else {
+            try {
+              newFiles.push(await parseFile(file));
+            } catch (e: any) {
+              errors.push(`${file.name}: ${e?.message || e}`);
+            }
+          }
         }
+
+        // Cap images at 3 to match uploadImage() behavior.
+        if (newImages.length > 3) newImages.length = 3;
+
         setAttachFiles(newFiles);
-      } catch (e: any) {
-        console.error("File parse error:", e);
-        alert("文件解析失败: " + (e?.message || e));
+        setAttachImages(newImages);
       } finally {
         setFileUploading(false);
+      }
+
+      if (errors.length > 0) {
+        console.error("File upload errors:", errors);
+        alert("部分文件处理失败:\n" + errors.join("\n"));
       }
     };
     fileInput.click();
