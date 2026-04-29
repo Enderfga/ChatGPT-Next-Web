@@ -179,14 +179,18 @@ export class ClaudeApi implements LLMApi {
       });
     }
 
+    // Anthropic API rejects sending both temperature and top_p (we keep
+    // temperature only). On top of that, newer Opus models (4.x+) deprecated
+    // temperature entirely — sending it returns invalid_request_error.
+    const skipTemperature = /opus-4/.test(modelConfig.model);
+
     const requestBody: AnthropicChatRequest = {
       messages: prompt,
       stream: shouldStream,
 
       model: modelConfig.model,
       max_tokens: modelConfig.max_tokens,
-      temperature: modelConfig.temperature,
-      // Anthropic API rejects sending both temperature and top_p; keep temperature only.
+      ...(skipTemperature ? {} : { temperature: modelConfig.temperature }),
       // top_k: modelConfig.top_k,
       top_k: 5,
     };
