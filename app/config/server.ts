@@ -34,6 +34,13 @@ declare global {
       AZURE_API_KEY?: string;
       AZURE_API_VERSION?: string;
 
+      // azure secondary resource (per-model override)
+      // Models listed in AZURE_MODELS_2 (comma-separated deployment names) are
+      // routed to AZURE_URL_2 with AZURE_API_KEY_2 instead of the primary pair.
+      AZURE_URL_2?: string;
+      AZURE_API_KEY_2?: string;
+      AZURE_MODELS_2?: string;
+
       // google only
       GOOGLE_API_KEY?: string;
       GOOGLE_URL?: string;

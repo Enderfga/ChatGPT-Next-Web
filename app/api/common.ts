@@ -60,6 +60,24 @@ export async function requestOpenai(req: NextRequest) {
       "",
     )}?api-version=${azureApiVersion}`;
 
+    // Per-model secondary Azure resource override.
+    // path looks like: deployments/<modelName>/chat/completions?...
+    const secondaryModels = (process.env.AZURE_MODELS_2 || "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const reqModel = path.split("/")[1];
+    if (
+      secondaryModels.includes(reqModel) &&
+      process.env.AZURE_URL_2 &&
+      process.env.AZURE_API_KEY_2
+    ) {
+      baseUrl = process.env.AZURE_URL_2.replace(/\/$/, "").split(
+        "/deployments",
+      )[0];
+      authValue = process.env.AZURE_API_KEY_2;
+    }
+
     // Forward compatibility:
     // if display_name(deployment_name) not set, and '{deploy-id}' in AZURE_URL
     // then using default '{deploy-id}'
